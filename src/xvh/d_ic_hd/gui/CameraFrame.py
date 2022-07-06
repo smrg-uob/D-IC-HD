@@ -10,7 +10,7 @@ class CameraFrame(Frame):
         Frame.__init__(self, master, *pargs)
         # set the camera
         self.camera = camera
-        # set the width and height
+        # set the width and height (temporarily)
         self.w = 300
         self.h = 300
         # take an image, and copy and resize it
@@ -20,21 +20,22 @@ class CameraFrame(Frame):
         self.background_image = ImageTk.PhotoImage(self.image)
         self.background = Label(self, image=self.background_image)
         self.background.pack(fill=Tk.BOTH, expand=Tk.YES)
-        self.background.bind('<Configure>', self._resize_image)
+        self.background.bind('<Configure>', self.resize_image)
 
     def refresh_image(self):
         # take a new picture
         self.original = Image.fromarray(self.camera.grab_picture())
-        # resize it
-        self.image = self.original.copy().resize((self.w, self.h))
-        # set it as the background
-        self.background_image = ImageTk.PhotoImage(self.image)
-        self.background.configure(image=self.background_image)
+        # reset the background
+        self.reset_background()
 
-    def _resize_image(self, event):
+    def resize_image(self, event):
         # fetch new width and height
         self.w = event.width
         self.h = event.height
+        # reset the background
+        self.reset_background()
+
+    def reset_background(self):
         # resize
         self.image = self.original.copy().resize((self.w, self.h))
         # set the new background

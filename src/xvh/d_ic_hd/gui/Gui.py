@@ -40,8 +40,8 @@ class Gui:
         self.frm_console.pack(fill=tk.X, side=tk.TOP, expand=False)
 
         # Create the camera elements
-        self.camera_1 = CameraElement(self.frm_cameras, "CAM 1", 'red', self.cameras.create_camera(0))
-        self.camera_2 = CameraElement(self.frm_cameras, "CAM 2", 'blue', self.cameras.create_camera(1))
+        self.camera_1 = CameraElement(self.frm_cameras, "CAM 1", self.cameras.create_camera(0))
+        self.camera_2 = CameraElement(self.frm_cameras, "CAM 2", self.cameras.create_camera(1))
 
         # Add a test button to take a new image
         self.btn_1 = tk.Button(master=self.frm_input, text="Test", command=lambda: self.on_press())

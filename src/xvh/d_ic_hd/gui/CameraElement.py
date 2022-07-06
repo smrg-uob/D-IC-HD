@@ -18,8 +18,18 @@ class CameraElement:
 
     def scrolled_y(self, type, value, unit=""):
         print("Scrolled Y on " + self.name + ": " + str(value) + " " + unit + " (" + type + ")")
+        pos = self.scroll_y.get()
+        height = 100
+        nr = float(value)
+        if unit == "":
+            new_mn = min(nr, (height - 1)/height)
+            new_mx = new_mn + 1/height
+        else:
+            new_mn = max(0, min(pos[0]*height + nr, height - 1))/height
+            new_mx = max(new_mn*height + 1, min(pos[1]*height + nr, height))/height
+        self.scroll_x.set(new_mn, new_mx)
 
-    def __init__(self, parent, name, colour, camera):
+    def __init__(self, parent, name, camera):
         # Set the name
         self.name = name
         # Create a frame for this camera
