@@ -14,4 +14,4 @@ class DummyCamera(Camera):
         return self.img
 
     def __init__(self):
-        self.img = np.zeros((self.camera.Height.Value, self.camera.Width.Value), dtype=np.uint8)
+        self.img = np.zeros((1, 1), dtype=np.uint8)
