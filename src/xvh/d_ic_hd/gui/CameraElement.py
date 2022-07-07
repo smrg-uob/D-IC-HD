@@ -1,6 +1,7 @@
 from CameraFrame import CameraFrame
 import re
 import ttk
+from PIL import Image, ImageTk
 
 
 class CameraElement:
@@ -45,10 +46,8 @@ class CameraElement:
         # Add controls frame
         self.frm_controls = tk.Frame(master=self.frm_main)
         self.frm_controls.pack(fill=tk.X, side=tk.TOP, expand=False)
-        self.frm_controls.grid_columnconfigure(0, weight=2)
-        self.frm_controls.grid_columnconfigure(1, weight=10)
-        self.frm_controls.grid_columnconfigure(2, weight=1)
-        self.frm_controls.grid_columnconfigure(3, weight=10)
+        for col in range(0, 100):
+            self.frm_controls.grid_columnconfigure(col, weight=1)
         # add camera selection
         self.lbl_cameras = tk.Label(master=self.frm_controls, text="Camera")
         self.camera_value = tk.StringVar()
@@ -56,8 +55,15 @@ class CameraElement:
         self.cbx_cameras = ttk.Combobox(master=self.frm_controls, state='readonly', textvariable=self.camera_value)
         self.cbx_cameras.bind("<<ComboboxSelected>>", self.camera_selected)
         self.cbx_cameras["values"] = self.cameras.get_names()
-        self.lbl_cameras.grid(row=0, column=0, padx=5, pady=5)
-        self.cbx_cameras.grid(row=0, column=1, sticky=(tk.E, tk.W), padx=5)
+        self.lbl_cameras.grid(row=0, column=1, columnspan=3, sticky=tk.W, padx=3, pady=1)
+        self.cbx_cameras.grid(row=0, column=4, columnspan=15, sticky=(tk.W, tk.E), pady=1)
+        # add capture controls
+        self.lbl_capture = tk.Label(master=self.frm_controls, text="Capture")
+        self.img_icon = ImageTk.PhotoImage(Image.open("resources/camera.gif"))
+        self.btn_image = tk.Button(master=self.frm_controls, width=16, height=16, image=self.img_icon, command=self.button_image_pressed)
+        self.btn_image.image = self.img_icon
+        self.lbl_capture.grid(row=1, column=1, columnspan=3, sticky=tk.W, padx=3, pady=1)
+        self.btn_image.grid(row=1, column=4, pady=1, sticky=tk.W)
         # add zoom control
         self.lbl_zoom = tk.Label(master=self.frm_controls, text="Digital Zoom")
         self.scroll_zoom = tk.Scrollbar(master=self.frm_controls, orient=tk.HORIZONTAL, command=self.zoom)
@@ -65,9 +71,9 @@ class CameraElement:
         self.zoom_value.set(str(self.camera_frame.scale) + 'x')
         self.lbl_zoom_value = tk.Label(master=self.frm_controls, textvariable=self.zoom_value)
         self.scroll_zoom.set(0, float(CameraFrame.MIN_ZOOM)/float(CameraFrame.MAX_ZOOM))
-        self.lbl_zoom.grid(row=2, column=0, padx=5, pady=5)
-        self.scroll_zoom.grid(row=2, column=1, sticky=(tk.E, tk.W), padx=5)
-        self.lbl_zoom_value.grid(row=2, column=2, sticky=(tk.E, tk.W), padx=5)
+        self.lbl_zoom.grid(row=2, column=1, columnspan=3, sticky=tk.W, padx=3, pady=1)
+        self.scroll_zoom.grid(row=2, column=4, columnspan=15, sticky=(tk.W, tk.E), pady=1)
+        self.lbl_zoom_value.grid(row=2, column=19, columnspan=1, pady=1)
         # add exposure control
         self.lbl_exposure = tk.Label(master=self.frm_controls, text="Exposure")
         self.scroll_exposure = tk.Scrollbar(master=self.frm_controls, orient=tk.HORIZONTAL, command=self.exposure_scroll)
@@ -75,11 +81,11 @@ class CameraElement:
         self.exposure_value = tk.StringVar()
         self.exposure_value.set(str(self.camera_frame.get_exposure()))
         self.exposure_value.trace_variable("w", self.exposure_write)
-        self.ety_exposure_value = tk.Entry(master=self.frm_controls, textvariable=self.exposure_value, validate='key', validatecommand=exposure_validation)
+        self.ety_exposure_value = tk.Entry(master=self.frm_controls, width=9, textvariable=self.exposure_value, validate='key', validatecommand=exposure_validation)
         self.update_exposure_scroll()
-        self.lbl_exposure.grid(row=3, column=0, sticky=(tk.E, tk.W), padx=5)
-        self.scroll_exposure.grid(row=3, column=1, sticky=(tk.E, tk.W), padx=5)
-        self.ety_exposure_value.grid(row=3, column=2, sticky=(tk.E, tk.W), padx=5)
+        self.lbl_exposure.grid(row=3, column=1, columnspan=3, sticky=tk.W, padx=3, pady=1)
+        self.scroll_exposure.grid(row=3, column=4, columnspan=15, sticky=(tk.W, tk.E), pady=1)
+        self.ety_exposure_value.grid(row=3, column=19, columnspan=1, pady=1)
 
     # called when a camera is selected
     def camera_selected(self, event=None):
@@ -93,7 +99,11 @@ class CameraElement:
             self.exposure_value.set(str(camera.get_exposure()))
             self.update_exposure_scroll()
             # log
-            self.log("Selected camera " + self.camera_frame.get_camera_name())
+            self.log("Connected to " + camera.get_name())
+
+    # called when the image button is pressed
+    def button_image_pressed(self):
+        self.refresh_image()
 
     # called when the image is scrolled horizontally
     def scrolled_x(self, type, value, unit=""):
@@ -178,7 +188,7 @@ class CameraElement:
         self.camera_frame.refresh_image()
 
     def log(self, line):
-        self.logger(line)
+        self.logger(self.name + ": " + line)
 
     @staticmethod
     def validate_exposure(val):

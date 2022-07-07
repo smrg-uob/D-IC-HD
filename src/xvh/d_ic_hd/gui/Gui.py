@@ -49,17 +49,9 @@ class Gui:
         self.camera_1 = CameraElement(tk, self.frm_cameras, "CAM 1", self.cameras, 0, self.log)
         self.camera_2 = CameraElement(tk, self.frm_cameras, "CAM 2", self.cameras, 1, self.log)
 
-        # Add a test button to take a new image
-        self.btn_1 = tk.Button(master=self.frm_input, text="Test", command=lambda: self.on_press())
-        self.btn_1.pack(ipadx=5, ipady=5, expand=True)
-
     def launch_gui(self):
         self.log("DI-C-HD Launched Successfully")
         self.gui.mainloop()
-
-    def on_press(self):
-        self.camera_1.refresh_image()
-        self.camera_2.refresh_image()
 
     def log(self, line):
         # enable the text box
