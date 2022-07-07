@@ -38,12 +38,20 @@ class CameraElement:
         # Add controls frame
         self.frm_controls = Tk.Frame(master=self.frm_main)
         self.frm_controls.pack(fill=Tk.X, side=Tk.TOP, expand=False)
-        # add zoom bar
+        self.frm_controls.grid_columnconfigure(0, weight=2)
+        self.frm_controls.grid_columnconfigure(1, weight=10)
+        self.frm_controls.grid_columnconfigure(2, weight=1)
+        self.frm_controls.grid_columnconfigure(3, weight=10)
+        # add zoom control
         self.lbl_zoom = Tk.Label(master=self.frm_controls, text="Digital Zoom")
         self.scroll_zoom = Tk.Scrollbar(master=self.frm_controls, orient=Tk.HORIZONTAL, command=self.zoom)
+        self.zoom_value = Tk.StringVar()
+        self.zoom_value.set(str(self.camera_frame.scale) + 'x')
+        self.lbl_zoom_value = Tk.Label(master=self.frm_controls, textvariable=self.zoom_value)
         self.scroll_zoom.set(0, float(CameraFrame.MIN_ZOOM)/float(CameraFrame.MAX_ZOOM))
-        self.lbl_zoom.grid(row=0, column=0, padx=5)
-        self.scroll_zoom.grid(row=1, column=0, sticky=(Tk.E, Tk.W), padx=5)
+        self.lbl_zoom.grid(row=0, column=0, padx=5, pady=5)
+        self.scroll_zoom.grid(row=0, column=1, sticky=(Tk.E, Tk.W), padx=5)
+        self.lbl_zoom_value.grid(row=0, column=2, sticky=(Tk.E, Tk.W), padx=5)
 
     # called when the image is scrolled horizontally
     def scrolled_x(self, type, value, unit=""):
@@ -68,15 +76,17 @@ class CameraElement:
     # called when the image is zoomed
     def zoom(self, type, value, unit=""):
         # get range values
-        full_range = CameraFrame.MAX_ZOOM
-        scroll_range = CameraFrame.MIN_ZOOM
+        full_range = len(CameraFrame.ZOOM_VALUES)
+        scroll_range = 1
         # handle the scrolling
         if CameraElement.handle_scroll(self.scroll_zoom, full_range, scroll_range, type, value, unit):
             # if scroll position has changed, update the image zoom
-            self.camera_frame.zoom(CameraFrame.MAX_ZOOM*self.scroll_zoom.get()[1])
+            self.camera_frame.set_zoom_index(len(CameraFrame.ZOOM_VALUES) * self.scroll_zoom.get()[0])
             # also update the scroll bars
             self.scrolled_x("scroll", 0)
             self.scrolled_y("scroll", 0)
+            # and the scroll value
+            self.zoom_value.set(str(self.camera_frame.scale) + 'x')
 
     def refresh_image(self):
         self.camera_frame.refresh_image()
@@ -92,10 +102,10 @@ class CameraElement:
         new_mn = old_mn
         new_mx = old_mx
         if type == "scroll":
-            new_mn = max(0.0, min(full_range - scroll_range, new_mn + float(value)))/full_range
+            new_mn = max(0.0, min(full_range - scroll_range + 0.0, new_mn + float(value)))/full_range
             new_mx = new_mn + scroll_range/(0.0 + full_range)
         if type == "moveto":
-            new_mn = max(0.0, min(full_range - scroll_range, float(value)*full_range))/full_range
+            new_mn = max(0.0, min(full_range - scroll_range + 0.0, float(value)*full_range))/full_range
             new_mx = new_mn + scroll_range/(0.0 + full_range)
         if new_mn != old_mn or new_mx != old_mx:
             scroll_bar.set(new_mn, new_mx)

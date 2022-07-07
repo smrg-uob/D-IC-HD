@@ -7,8 +7,9 @@ from PIL import Image, ImageTk
 # Class to display an image on a frame
 class CameraFrame(Frame):
     # zoom constants
-    MIN_ZOOM = 1
-    MAX_ZOOM = 20
+    ZOOM_VALUES = (1.00, 1.05, 1.10, 1.20, 1.50, 2.00, 3.00, 4.00, 5.00, 10.00)
+    MAX_ZOOM = max(ZOOM_VALUES)
+    MIN_ZOOM = min(ZOOM_VALUES)
 
     def __init__(self, master, name, camera, logger, *pargs):
         Frame.__init__(self, master, *pargs)
@@ -68,11 +69,11 @@ class CameraFrame(Frame):
         self.background_image = ImageTk.PhotoImage(self.image)
         self.background.configure(image=self.background_image)
 
-    def zoom(self, scale):
-        new_scale = max(CameraFrame.MIN_ZOOM, min(CameraFrame.MAX_ZOOM, int(scale)))
-        if new_scale != self.scale:
+    def set_zoom_index(self, index):
+        scale = CameraFrame.ZOOM_VALUES[max(0, min(len(CameraFrame.ZOOM_VALUES) - 1, int(index)))]
+        if scale != self.scale:
             # set the scale
-            self.scale = new_scale
+            self.scale = scale
             # recalculate the panning boundaries
             self.calculate_pan_bounds()
             # update the pan position
@@ -85,7 +86,6 @@ class CameraFrame(Frame):
         else:
             self.max_dx = self.image_width() - int(self.zoom_width())
             self.max_dy = self.image_height() - int(self.zoom_height())
-
 
     def set_pan_x(self, dx):
         self.set_pan(dx, self.dy)
