@@ -5,19 +5,6 @@ import Tkinter as tk
 
 
 class Gui:
-    def launch_gui(self):
-        self.log("DI-C-HD Launched Successfully")
-        self.gui.mainloop()
-
-    def on_press(self):
-        self.camera_1.refresh_image()
-        self.camera_2.refresh_image()
-
-    def log(self, line):
-        self.console.configure(state="normal")
-        self.console.insert(tk.END, "[" + str(date.today()) + "][" + datetime.now().strftime("%H:%M:%S") + "] " + line + '\n')
-        self.console.configure(state="disabled")
-
     def __init__(self):
         # Create the gui window
         self.gui = tk.Tk()
@@ -65,3 +52,25 @@ class Gui:
         # Add a test button to take a new image
         self.btn_1 = tk.Button(master=self.frm_input, text="Test", command=lambda: self.on_press())
         self.btn_1.pack(ipadx=5, ipady=5, expand=True)
+
+    def launch_gui(self):
+        self.log("DI-C-HD Launched Successfully")
+        self.gui.mainloop()
+
+    def on_press(self):
+        self.camera_1.refresh_image()
+        self.camera_2.refresh_image()
+
+    def log(self, line):
+        # enable the text box
+        self.console.configure(state="normal")
+        # add a new line if there is already text
+        text = self.console.get("1.0", "end-1c")
+        if len(text) > 0:
+            self.console.insert(tk.END, '\n')
+        # log the line
+        self.console.insert(tk.END, "[" + str(date.today()) + "][" + datetime.now().strftime("%H:%M:%S") + "] " + line)
+        # disable the text box again
+        self.console.configure(state="disabled")
+        # scroll to the bottom
+        self.console.yview("scroll", str(self.console.get("1.0", "end-1c").count('\n')), "units")
