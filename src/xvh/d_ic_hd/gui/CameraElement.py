@@ -5,46 +5,33 @@ from CameraFrame import CameraFrame
 class CameraElement:
     # called when the image is scrolled horizontally
     def scrolled_x(self, type, value, unit=""):
-        print("Scrolled X on " + self.name + ": " + str(value) + " " + unit + " (" + type + ")")
-        pos = self.scroll_x.get()
-        t_width = self.camera_frame.image_width()
-        s_width = float(self.camera_frame.zoom_width())/float(t_width)
-        # calculate step and delta
-        step = 1.0/float(t_width)
-        delta = float(value)*step
-        # calculate new position
-        new_mn = max(0.0, min(1.0 - s_width, pos[0] + delta))
-        new_mx = new_mn + s_width
-        self.scroll_x.set(new_mn, new_mx)
+        # get range values
+        full_range = self.camera_frame.image_width()
+        scroll_range = self.camera_frame.zoom_width()
+        # handle the scrolling
+        if CameraElement.handle_scroll(self.scroll_x, full_range, scroll_range, type, value, unit):
+            # if scroll position has changed, update the vertical pan
+            self.camera_frame.set_pan_x(full_range*self.scroll_x.get()[0])
 
     # called when the image is scrolled vertically
     def scrolled_y(self, type, value, unit=""):
-        print("Scrolled X on " + self.name + ": " + str(value) + " " + unit + " (" + type + ")")
-        pos = self.scroll_y.get()
-        t_height = self.camera_frame.image_height()
-        s_height = float(self.camera_frame.zoom_height())/float(t_height)
-        # calculate step and delta
-        step = 1.0/float(t_height)
-        delta = float(value)*step
-        # calculate new position
-        new_mn = max(0.0, min(1.0 - s_height, pos[0] + delta))
-        new_mx = new_mn + s_height
-        self.scroll_y.set(new_mn, new_mx)
+        # get range values
+        full_range = self.camera_frame.image_height()
+        scroll_range = self.camera_frame.zoom_height()
+        # handle the scrolling
+        if CameraElement.handle_scroll(self.scroll_y, full_range, scroll_range, type, value, unit):
+            # if scroll position has changed, update the vertical pan
+            self.camera_frame.set_pan_y(full_range*self.scroll_y.get()[0])
 
     # called when the image is zoomed
     def zoom(self, type, value, unit=""):
-        # fetch the current position
-        pos = self.scroll_zoom.get()
-        # fetch the step and delta
-        step = float(CameraFrame.MIN_ZOOM)/float(CameraFrame.MAX_ZOOM)
-        delta = float(value)*step
-        # calculate new position
-        new_mn = max(0.0, min(1.0 - step, pos[0] + delta))
-        new_mx = new_mn + step
-        # zoom the image
-        self.camera_frame.zoom(CameraFrame.MAX_ZOOM*new_mx)
-        # update the scroll bar
-        self.scroll_zoom.set(new_mn, new_mx)
+        # get range values
+        full_range = CameraFrame.MAX_ZOOM
+        scroll_range = CameraFrame.MIN_ZOOM
+        # handle the scrolling
+        if CameraElement.handle_scroll(self.scroll_zoom, full_range, scroll_range, type, value, unit):
+            # if scroll position has changed, update the image zoom
+            self.camera_frame.zoom(CameraFrame.MAX_ZOOM*self.scroll_zoom.get()[1])
 
     def __init__(self, parent, name, camera):
         # Set the name
@@ -86,3 +73,21 @@ class CameraElement:
 
     def refresh_image(self):
         self.camera_frame.refresh_image()
+
+    @staticmethod
+    def handle_scroll(scroll_bar, full_range, scroll_range, type, value, unit=""):
+        current = scroll_bar.get()
+        old_mn = current[0]*full_range
+        old_mx = current[1]*full_range
+        new_mn = old_mn
+        new_mx = old_mx
+        if type == "scroll":
+            new_mn = max(0.0, min(full_range - scroll_range, new_mn + float(value)))/full_range
+            new_mx = new_mn + scroll_range/full_range
+        if type == "moveto":
+            new_mn = max(0.0, min(full_range - scroll_range, float(value)*full_range))/full_range
+            new_mx = new_mn + scroll_range/full_range
+        if new_mn != old_mn or new_mx != old_mx:
+            scroll_bar.set(new_mn, new_mx)
+            return True
+        return False

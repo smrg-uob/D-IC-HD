@@ -60,10 +60,7 @@ class CameraFrame(Frame):
             # recalculate the panning boundaries
             self.calculate_pan_bounds()
             # update the pan position
-            self.dx = min(self.dx, self.max_dx)
-            self.dy = min(self.dy, self.max_dy)
-            # reset the background
-            # TODO
+            self.set_pan(self.dx, self.dy)
 
     def calculate_pan_bounds(self):
         if self.scale == 1:
@@ -72,6 +69,18 @@ class CameraFrame(Frame):
         else:
             self.max_dx = self.image_width() - self.zoom_width()
             self.max_dy = self.image_height() - self.zoom_height()
+
+    def set_pan_x(self, dx):
+        self.set_pan(dx, self.dy)
+
+    def set_pan_y(self, dy):
+        self.set_pan(self.dx, dy)
+
+    def set_pan(self, dx, dy):
+        self.dx = max(0, min(self.max_dx, dx))
+        self.dy = max(0, min(self.max_dy, dy))
+        # reset the background
+        # TODO
 
     def image_width(self):
         return self.original.size[0]
