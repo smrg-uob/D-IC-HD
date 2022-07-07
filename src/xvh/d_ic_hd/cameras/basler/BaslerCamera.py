@@ -1,8 +1,17 @@
+from xvh.d_ic_hd.cameras.AbstractCamera import AbstractCamera
 from pypylon import pylon
 import numpy as np
 
 
-class Camera:
+class BaslerCamera(AbstractCamera):
+    @staticmethod
+    def available_cameras():
+        baslers = pylon.TlFactory.GetInstance().EnumerateDevices()
+        cameras = []
+        for basler in baslers:
+            cameras.append(BaslerCamera(basler))
+        return cameras
+
     def is_valid(self):
         return True
 
@@ -24,6 +33,7 @@ class Camera:
         return self
 
     def __init__(self, camera_info):
+        AbstractCamera.__init__(self)
         self.info = camera_info
         self.device = pylon.TlFactory.GetInstance().CreateDevice(camera_info)
         self.camera = pylon.InstantCamera(self.device)

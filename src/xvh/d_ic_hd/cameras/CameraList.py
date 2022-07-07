@@ -1,6 +1,5 @@
-from pypylon import pylon
-from Camera import Camera
 from DummyCamera import DummyCamera as Dummy
+from basler.BaslerCamera import BaslerCamera
 
 
 class CameraList:
@@ -13,7 +12,7 @@ class CameraList:
         return CameraList.dummy
 
     def scan_cameras(self):
-        self.cameras = pylon.TlFactory.GetInstance().EnumerateDevices()
+        self.cameras = BaslerCamera.available_cameras()
         return self
 
     def camera_count(self):
@@ -26,7 +25,7 @@ class CameraList:
         if index >= len(self.cameras):
             return CameraList.get_dummy()
         # return an actual camera
-        return Camera(self.cameras[index])
+        return BaslerCamera(self.cameras[index])
 
     def __init__(self):
         self.cameras = []
