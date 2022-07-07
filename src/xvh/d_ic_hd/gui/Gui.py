@@ -1,4 +1,5 @@
 from CameraElement import CameraElement
+from xvh.d_ic_hd.cameras.CameraList import CameraList
 import Tkinter as Tk
 
 
@@ -10,7 +11,7 @@ class Gui:
         self.camera_1.refresh_image()
         self.camera_2.refresh_image()
 
-    def __init__(self, cameras):
+    def __init__(self):
         # Create the gui window
         self.gui = Tk.Tk()
         self.gui.wm_title("ICHD-DIC")
@@ -23,7 +24,7 @@ class Gui:
         h_console = 200
 
         # Fetch available cameras
-        self.cameras = cameras
+        self.cameras = CameraList().scan_cameras()
 
         # Create frames for the inputs and outputs
         self.frm_input = Tk.Frame(master=self.gui, width=w_inputs, relief=Tk.GROOVE, borderwidth=3)

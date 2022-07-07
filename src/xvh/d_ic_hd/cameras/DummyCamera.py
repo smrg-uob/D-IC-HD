@@ -10,6 +10,9 @@ class DummyCamera(AbstractCamera):
     def grab_picture(self):
         return self.img
 
+    def set_exposure(self, exposure):
+        return self
+
     def __init__(self):
         AbstractCamera.__init__(self)
         self.img = np.zeros((1, 1), dtype=np.uint8)
