@@ -33,8 +33,8 @@ class CameraFrame(Frame):
         self.max_dx = 0
         self.max_dy = 0
         # take an image, and copy and resize it
-        self.original = Image.fromarray(self.camera.grab_picture())
-        self.image = self.original.copy().resize((self.w, self.h))
+        self.original = self.camera.grab_picture()
+        self.image = Image.fromarray(self.original).resize((self.w, self.h))
         # set the background image and bind the resize method to it
         self.background_image = ImageTk.PhotoImage(self.image)
         self.background = Label(self, image=self.background_image)
@@ -43,7 +43,7 @@ class CameraFrame(Frame):
 
     def refresh_image(self):
         # take a new picture
-        self.original = Image.fromarray(self.camera.grab_picture())
+        self.original = self.camera.grab_picture()
         # reset the background
         self.reset_background()
 
@@ -56,13 +56,20 @@ class CameraFrame(Frame):
 
     def reset_background(self):
         # resize
-        self.image = self.original.copy().resize((self.w, self.h))
+        copy = self.original
+        if self.scale > 1:
+            x1 = self.dx
+            x2 = x1 + int(self.zoom_width())
+            y1 = self.dy
+            y2 = y1 + int(self.zoom_height())
+            copy = self.original[x1:x2, y1:y2]
+        self.image = Image.fromarray(copy).resize((self.w, self.h))
         # set the new background
         self.background_image = ImageTk.PhotoImage(self.image)
         self.background.configure(image=self.background_image)
 
     def zoom(self, scale):
-        new_scale = max(CameraFrame.MIN_ZOOM, min(CameraFrame.MIN_ZOOM, int(scale)))
+        new_scale = max(CameraFrame.MIN_ZOOM, min(CameraFrame.MAX_ZOOM, int(scale)))
         if new_scale != self.scale:
             # set the scale
             self.scale = new_scale
@@ -76,8 +83,8 @@ class CameraFrame(Frame):
             self.max_dx = 0
             self.max_dy = 0
         else:
-            self.max_dx = self.image_width() - self.zoom_width()
-            self.max_dy = self.image_height() - self.zoom_height()
+            self.max_dx = self.image_width() - int(self.zoom_width())
+            self.max_dy = self.image_height() - int(self.zoom_height())
 
     def set_pan_x(self, dx):
         self.set_pan(dx, self.dy)
@@ -86,16 +93,16 @@ class CameraFrame(Frame):
         self.set_pan(self.dx, dy)
 
     def set_pan(self, dx, dy):
-        self.dx = max(0, min(self.max_dx, dx))
-        self.dy = max(0, min(self.max_dy, dy))
+        self.dx = max(0, min(self.max_dx, int(dx)))
+        self.dy = max(0, min(self.max_dy, int(dy)))
         # reset the background
-        # TODO
+        self.reset_background()
 
     def image_width(self):
-        return self.original.size[0]
+        return self.original.shape[0]
 
     def image_height(self):
-        return self.original.size[0]
+        return self.original.shape[1]
 
     def zoom_width(self):
         return float(self.image_width())/float(self.scale)

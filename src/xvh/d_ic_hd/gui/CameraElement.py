@@ -6,22 +6,22 @@ class CameraElement:
     # called when the image is scrolled horizontally
     def scrolled_x(self, type, value, unit=""):
         # get range values
-        full_range = self.camera_frame.image_width()
-        scroll_range = self.camera_frame.zoom_width()
+        full_range = self.camera_frame.image_height()
+        scroll_range = self.camera_frame.zoom_height()
         # handle the scrolling
         if CameraElement.handle_scroll(self.scroll_x, full_range, scroll_range, type, value, unit):
             # if scroll position has changed, update the vertical pan
-            self.camera_frame.set_pan_x(full_range*self.scroll_x.get()[0])
+            self.camera_frame.set_pan_y(full_range*self.scroll_x.get()[0])
 
     # called when the image is scrolled vertically
     def scrolled_y(self, type, value, unit=""):
         # get range values
-        full_range = self.camera_frame.image_height()
-        scroll_range = self.camera_frame.zoom_height()
+        full_range = self.camera_frame.image_width()
+        scroll_range = self.camera_frame.zoom_width()
         # handle the scrolling
         if CameraElement.handle_scroll(self.scroll_y, full_range, scroll_range, type, value, unit):
             # if scroll position has changed, update the vertical pan
-            self.camera_frame.set_pan_y(full_range*self.scroll_y.get()[0])
+            self.camera_frame.set_pan_x(full_range*self.scroll_y.get()[0])
 
     # called when the image is zoomed
     def zoom(self, type, value, unit=""):
