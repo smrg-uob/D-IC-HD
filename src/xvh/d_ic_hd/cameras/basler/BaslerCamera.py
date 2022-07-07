@@ -20,7 +20,7 @@ class BaslerCamera(AbstractCamera):
 
     def grab_picture(self):
         self.camera.Open()
-        self.camera.ExposureTime.value = self.exposure
+        self.camera.ExposureTime.Value = self.exposure
         self.camera.StartGrabbing(1)
         grabbed = self.camera.RetrieveResult(5*self.exposure, pylon.TimeoutHandling_ThrowException)
         if grabbed.GrabSucceeded():
