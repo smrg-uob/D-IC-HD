@@ -41,6 +41,13 @@ class CameraFrame(Frame):
         self.background.pack(fill=tk.BOTH, expand=tk.YES)
         self.background.bind('<Configure>', self.resize_image)
 
+    def set_camera(self, camera):
+        self.camera = camera
+        self.refresh_image()
+
+    def get_camera_name(self):
+        return self.camera.get_name()
+
     def refresh_image(self):
         # take a new picture
         self.original = self.camera.grab_picture()

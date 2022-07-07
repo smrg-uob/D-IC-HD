@@ -5,13 +5,20 @@ from basler.BaslerCamera import BaslerCamera
 class CameraList:
 
     def scan_cameras(self):
-        self.cameras = BaslerCamera.available_cameras(self.logger)
+        self.cameras = []
+        self.names = []
+        for camera in BaslerCamera.available_cameras(self.logger):
+            self.cameras.append(camera)
+            self.names.append(camera.get_name())
         return self
 
     def camera_count(self):
         return len(self.cameras)
 
-    def create_camera(self, index):
+    def get_names(self):
+        return self.names
+
+    def get_camera(self, index):
         # safety checks
         if index < 0:
             return self.dummy
@@ -22,5 +29,6 @@ class CameraList:
 
     def __init__(self, logger):
         self.cameras = []
+        self.names = []
         self.logger = logger
         self.dummy = Dummy(logger)
