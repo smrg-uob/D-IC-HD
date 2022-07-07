@@ -3,36 +3,6 @@ from CameraFrame import CameraFrame
 
 
 class CameraElement:
-    # called when the image is scrolled horizontally
-    def scrolled_x(self, type, value, unit=""):
-        # get range values
-        full_range = self.camera_frame.image_height()
-        scroll_range = self.camera_frame.zoom_height()
-        # handle the scrolling
-        if CameraElement.handle_scroll(self.scroll_x, full_range, scroll_range, type, value, unit):
-            # if scroll position has changed, update the vertical pan
-            self.camera_frame.set_pan_y(full_range*self.scroll_x.get()[0])
-
-    # called when the image is scrolled vertically
-    def scrolled_y(self, type, value, unit=""):
-        # get range values
-        full_range = self.camera_frame.image_width()
-        scroll_range = self.camera_frame.zoom_width()
-        # handle the scrolling
-        if CameraElement.handle_scroll(self.scroll_y, full_range, scroll_range, type, value, unit):
-            # if scroll position has changed, update the vertical pan
-            self.camera_frame.set_pan_x(full_range*self.scroll_y.get()[0])
-
-    # called when the image is zoomed
-    def zoom(self, type, value, unit=""):
-        # get range values
-        full_range = CameraFrame.MAX_ZOOM
-        scroll_range = CameraFrame.MIN_ZOOM
-        # handle the scrolling
-        if CameraElement.handle_scroll(self.scroll_zoom, full_range, scroll_range, type, value, unit):
-            # if scroll position has changed, update the image zoom
-            self.camera_frame.zoom(CameraFrame.MAX_ZOOM*self.scroll_zoom.get()[1])
-
     def __init__(self, parent, name, camera, logger):
         # Set the parent
         self.parent = parent
@@ -75,6 +45,39 @@ class CameraElement:
         self.lbl_zoom.grid(row=0, column=0, padx=5)
         self.scroll_zoom.grid(row=1, column=0, sticky=(Tk.E, Tk.W), padx=5)
 
+    # called when the image is scrolled horizontally
+    def scrolled_x(self, type, value, unit=""):
+        # get range values
+        full_range = self.camera_frame.image_height()
+        scroll_range = self.camera_frame.zoom_height()
+        # handle the scrolling
+        if CameraElement.handle_scroll(self.scroll_x, full_range, scroll_range, type, value, unit):
+            # if scroll position has changed, update the vertical pan
+            self.camera_frame.set_pan_y(full_range*self.scroll_x.get()[0])
+
+    # called when the image is scrolled vertically
+    def scrolled_y(self, type, value, unit=""):
+        # get range values
+        full_range = self.camera_frame.image_width()
+        scroll_range = self.camera_frame.zoom_width()
+        # handle the scrolling
+        if CameraElement.handle_scroll(self.scroll_y, full_range, scroll_range, type, value, unit):
+            # if scroll position has changed, update the vertical pan
+            self.camera_frame.set_pan_x(full_range*self.scroll_y.get()[0])
+
+    # called when the image is zoomed
+    def zoom(self, type, value, unit=""):
+        # get range values
+        full_range = CameraFrame.MAX_ZOOM
+        scroll_range = CameraFrame.MIN_ZOOM
+        # handle the scrolling
+        if CameraElement.handle_scroll(self.scroll_zoom, full_range, scroll_range, type, value, unit):
+            # if scroll position has changed, update the image zoom
+            self.camera_frame.zoom(CameraFrame.MAX_ZOOM*self.scroll_zoom.get()[1])
+            # also update the scroll bars
+            self.scrolled_x("scroll", 0)
+            self.scrolled_y("scroll", 0)
+
     def refresh_image(self):
         self.camera_frame.refresh_image()
 
@@ -90,10 +93,10 @@ class CameraElement:
         new_mx = old_mx
         if type == "scroll":
             new_mn = max(0.0, min(full_range - scroll_range, new_mn + float(value)))/full_range
-            new_mx = new_mn + scroll_range/full_range
+            new_mx = new_mn + scroll_range/(0.0 + full_range)
         if type == "moveto":
             new_mn = max(0.0, min(full_range - scroll_range, float(value)*full_range))/full_range
-            new_mx = new_mn + scroll_range/full_range
+            new_mx = new_mn + scroll_range/(0.0 + full_range)
         if new_mn != old_mn or new_mx != old_mx:
             scroll_bar.set(new_mn, new_mx)
             return True

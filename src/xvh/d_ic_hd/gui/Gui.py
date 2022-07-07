@@ -28,8 +28,6 @@ class Gui:
 
         # sub-frame dimensions
         w_inputs = 300
-        h_cameras = 1000
-        h_console = 50
 
         # Create frames for the inputs and outputs
         self.frm_input = Tk.Frame(master=self.gui, width=w_inputs, relief=Tk.GROOVE, borderwidth=3)

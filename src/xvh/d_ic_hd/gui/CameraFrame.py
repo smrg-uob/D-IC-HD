@@ -86,6 +86,7 @@ class CameraFrame(Frame):
             self.max_dx = self.image_width() - int(self.zoom_width())
             self.max_dy = self.image_height() - int(self.zoom_height())
 
+
     def set_pan_x(self, dx):
         self.set_pan(dx, self.dy)
 
