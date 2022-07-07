@@ -28,7 +28,8 @@ class Gui:
 
         # sub-frame dimensions
         w_inputs = 300
-        h_console = 200
+        h_cameras = 1000
+        h_console = 50
 
         # Create frames for the inputs and outputs
         self.frm_input = Tk.Frame(master=self.gui, width=w_inputs, relief=Tk.GROOVE, borderwidth=3)
@@ -40,12 +41,15 @@ class Gui:
 
         # For the output frame, create sub-frames for the cameras, and for the console
         self.frm_cameras = Tk.Frame(master=self.frm_output)
-        self.frm_console = Tk.Frame(master=self.frm_output, height=h_console, relief=Tk.GROOVE, borderwidth=3)
-        self.frm_cameras.pack(fill=Tk.BOTH, side=Tk.TOP, expand=True)
-        self.frm_console.pack(fill=Tk.X, side=Tk.TOP, expand=False)
+        self.frm_console = Tk.Frame(master=self.frm_output, relief=Tk.GROOVE, borderwidth=3)
+        self.frm_output.grid_rowconfigure(0, weight=100)
+        self.frm_output.grid_rowconfigure(1, weight=1)
+        self.frm_output.grid_columnconfigure(0, weight=1)
+        self.frm_cameras.grid(row=0, column=0, sticky=(Tk.N, Tk.W, Tk.E, Tk.S))
+        self.frm_console.grid(row=1, column=0, sticky=(Tk.W, Tk.E))
 
         # Create the console
-        self.console = Tk.Text(master=self.frm_console)
+        self.console = Tk.Text(master=self.frm_console, height=10)
         self.console_scroll = Tk.Scrollbar(master=self.frm_console, orient=Tk.VERTICAL, command=self.console.yview)
         self.frm_console.grid_columnconfigure(0, weight=1)
         self.console.grid(row=0, column=0, sticky=(Tk.N, Tk.W, Tk.E, Tk.S))
