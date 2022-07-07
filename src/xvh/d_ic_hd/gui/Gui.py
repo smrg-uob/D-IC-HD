@@ -15,7 +15,7 @@ class Gui:
 
     def log(self, line):
         self.console.configure(state="normal")
-        self.console.insert(Tk.END, "[" + str(date.today()) + "][" + datetime.now().strftime("%H:%M:%S") + "] " + line)
+        self.console.insert(Tk.END, "[" + str(date.today()) + "][" + datetime.now().strftime("%H:%M:%S") + "] " + line + '\n')
         self.console.configure(state="disabled")
 
     def __init__(self):
@@ -29,9 +29,6 @@ class Gui:
         # sub-frame dimensions
         w_inputs = 300
         h_console = 200
-
-        # Fetch available cameras
-        self.cameras = CameraList().scan_cameras()
 
         # Create frames for the inputs and outputs
         self.frm_input = Tk.Frame(master=self.gui, width=w_inputs, relief=Tk.GROOVE, borderwidth=3)
@@ -56,9 +53,12 @@ class Gui:
         self.console['yscrollcommand'] = self.console_scroll.set
         self.console.configure(state="disabled")
 
+        # Fetch available cameras
+        self.cameras = CameraList(self.log).scan_cameras()
+
         # Create the camera elements
-        self.camera_1 = CameraElement(self.frm_cameras, "CAM 1", self.cameras.create_camera(0))
-        self.camera_2 = CameraElement(self.frm_cameras, "CAM 2", self.cameras.create_camera(1))
+        self.camera_1 = CameraElement(self.frm_cameras, "CAM 1", self.cameras.create_camera(0), self.log)
+        self.camera_2 = CameraElement(self.frm_cameras, "CAM 2", self.cameras.create_camera(1), self.log)
 
         # Add a test button to take a new image
         self.btn_1 = Tk.Button(master=self.frm_input, text="Test", command=lambda: self.on_press())

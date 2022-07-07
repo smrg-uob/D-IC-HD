@@ -3,16 +3,9 @@ from basler.BaslerCamera import BaslerCamera
 
 
 class CameraList:
-    # dummy camera
-    dummy = Dummy()
-
-    @staticmethod
-    def get_dummy():
-        print("Invalid camera requested, returning dummy camera")
-        return CameraList.dummy
 
     def scan_cameras(self):
-        self.cameras = BaslerCamera.available_cameras()
+        self.cameras = BaslerCamera.available_cameras(self.logger)
         return self
 
     def camera_count(self):
@@ -21,11 +14,13 @@ class CameraList:
     def create_camera(self, index):
         # safety checks
         if index < 0:
-            return CameraList.get_dummy()
+            return self.dummy
         if index >= len(self.cameras):
-            return CameraList.get_dummy()
+            return self.dummy
         # return an actual camera
-        return BaslerCamera(self.cameras[index])
+        return self.cameras[index]
 
-    def __init__(self):
+    def __init__(self, logger):
         self.cameras = []
+        self.logger = logger
+        self.dummy = Dummy(logger)

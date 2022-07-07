@@ -33,11 +33,15 @@ class CameraElement:
             # if scroll position has changed, update the image zoom
             self.camera_frame.zoom(CameraFrame.MAX_ZOOM*self.scroll_zoom.get()[1])
 
-    def __init__(self, parent, name, camera):
+    def __init__(self, parent, name, camera, logger):
+        # Set the parent
+        self.parent = parent
+        # set the logging method
+        self.logger = logger
         # Set the name
         self.name = name
         # Create a frame for this camera
-        self.frm_main = Tk.Frame(master=parent, relief=Tk.GROOVE, borderwidth=3)
+        self.frm_main = Tk.Frame(master=self.parent, relief=Tk.GROOVE, borderwidth=3)
         self.frm_main.pack(fill=Tk.BOTH, side=Tk.LEFT, expand=True)
         # Prevent the frame from resetting its size
         self.frm_main.pack_propagate(False)
@@ -53,7 +57,7 @@ class CameraElement:
         frm_cvs.columnconfigure(0, weight=1, minsize=300)
         frm_cvs.rowconfigure(0, weight=1, minsize=300)
         # Create the camera frame
-        self.camera_frame = CameraFrame(master=frm_cvs, camera=camera.set_exposure(10000))
+        self.camera_frame = CameraFrame(master=frm_cvs, camera=camera.set_exposure(10000), name=self.name, logger=logger)
         self.camera_frame.grid(row=0, column=0, sticky=(Tk.N, Tk.W, Tk.S, Tk.E))
         self.camera_frame.pack_propagate(False)
         # Create the scroll bars
@@ -73,6 +77,9 @@ class CameraElement:
 
     def refresh_image(self):
         self.camera_frame.refresh_image()
+
+    def log(self, line):
+        self.logger(line)
 
     @staticmethod
     def handle_scroll(scroll_bar, full_range, scroll_range, type, value, unit=""):

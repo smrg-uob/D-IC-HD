@@ -5,15 +5,18 @@ import numpy as np
 
 class BaslerCamera(AbstractCamera):
     @staticmethod
-    def available_cameras():
+    def available_cameras(logger):
         baslers = pylon.TlFactory.GetInstance().EnumerateDevices()
         cameras = []
         for basler in baslers:
-            cameras.append(BaslerCamera(basler))
+            cameras.append(BaslerCamera(basler, logger))
         return cameras
 
     def is_valid(self):
         return True
+
+    def get_name(self):
+        return "Basler " + self.info.GetSerialNumber()
 
     def grab_picture(self):
         self.camera.Open()
@@ -32,8 +35,8 @@ class BaslerCamera(AbstractCamera):
         self.exposure = exposure
         return self
 
-    def __init__(self, camera_info):
-        AbstractCamera.__init__(self)
+    def __init__(self, camera_info, logger):
+        AbstractCamera.__init__(self, logger)
         self.info = camera_info
         self.device = pylon.TlFactory.GetInstance().CreateDevice(camera_info)
         self.camera = pylon.InstantCamera(self.device)

@@ -1,5 +1,9 @@
 class AbstractCamera:
-    def __init__(self):
+    def __init__(self, logger):
+        self.logger = logger
+        pass
+
+    def get_name(self):
         pass
 
     def is_valid(self):
@@ -10,3 +14,6 @@ class AbstractCamera:
 
     def set_exposure(self, exposure):
         pass
+
+    def log(self, line):
+        self.logger(line)

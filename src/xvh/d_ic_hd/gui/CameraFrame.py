@@ -10,10 +10,17 @@ class CameraFrame(Frame):
     MIN_ZOOM = 1
     MAX_ZOOM = 20
 
-    def __init__(self, master, camera, *pargs):
+    def __init__(self, master, name, camera, logger, *pargs):
         Frame.__init__(self, master, *pargs)
+        # set the name
+        self.name = name
         # set the camera
         self.camera = camera
+        # set the logging method
+        self.logger = logger
+        # check if the camera is valid
+        if not self.camera.is_valid():
+            self.log("Invalid camera requested on " + self.name)
         # set the width and height (temporarily)
         self.w = 300
         self.h = 300
@@ -93,3 +100,6 @@ class CameraFrame(Frame):
 
     def zoom_height(self):
         return float(self.image_height())/float(self.scale)
+
+    def log(self, line):
+        self.logger(line)
