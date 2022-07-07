@@ -35,14 +35,23 @@ class BaslerCamera(AbstractCamera):
         self.exposure = exposure
         return self
 
+    def get_exposure(self):
+        return self.exposure
+
+    def min_exposure(self):
+        return self.min_exp
+
+    def max_exposure(self):
+        return self.max_exp
+
     def __init__(self, camera_info, logger):
         AbstractCamera.__init__(self, logger)
         self.info = camera_info
         self.device = pylon.TlFactory.GetInstance().CreateDevice(camera_info)
         self.camera = pylon.InstantCamera(self.device)
         self.camera.Open()
-        self.min_exp = self.camera.ExposureTime.Min
-        self.max_exp = self.camera.ExposureTime.Max
+        self.min_exp = int(self.camera.ExposureTime.Min)
+        self.max_exp = int(self.camera.ExposureTime.Max)
         self.exposure = self.min_exp
         self.set_exposure(self.min_exp)
         self.camera.Close()

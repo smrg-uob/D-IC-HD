@@ -1,4 +1,3 @@
-import Tkinter as Tk
 from Tkinter import Frame
 from Tkinter import Label
 from PIL import Image, ImageTk
@@ -11,7 +10,7 @@ class CameraFrame(Frame):
     MAX_ZOOM = max(ZOOM_VALUES)
     MIN_ZOOM = min(ZOOM_VALUES)
 
-    def __init__(self, master, name, camera, logger, *pargs):
+    def __init__(self, tk, master, name, camera, logger, *pargs):
         Frame.__init__(self, master, *pargs)
         # set the name
         self.name = name
@@ -39,7 +38,7 @@ class CameraFrame(Frame):
         # set the background image and bind the resize method to it
         self.background_image = ImageTk.PhotoImage(self.image)
         self.background = Label(self, image=self.background_image)
-        self.background.pack(fill=Tk.BOTH, expand=Tk.YES)
+        self.background.pack(fill=tk.BOTH, expand=tk.YES)
         self.background.bind('<Configure>', self.resize_image)
 
     def refresh_image(self):
@@ -110,6 +109,18 @@ class CameraFrame(Frame):
 
     def zoom_height(self):
         return float(self.image_height())/float(self.scale)
+
+    def set_exposure(self, exposure):
+        self.camera.set_exposure(exposure)
+
+    def get_exposure(self):
+        return self.camera.get_exposure()
+
+    def min_exposure(self):
+        return self.camera.min_exposure()
+
+    def max_exposure(self):
+        return self.camera.max_exposure()
 
     def log(self, line):
         self.logger(line)

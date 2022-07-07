@@ -15,5 +15,14 @@ class AbstractCamera:
     def set_exposure(self, exposure):
         pass
 
+    def get_exposure(self):
+        pass
+
+    def min_exposure(self):
+        pass
+
+    def max_exposure(self):
+        pass
+
     def log(self, line):
         self.logger(line)

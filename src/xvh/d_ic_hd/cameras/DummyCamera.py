@@ -16,6 +16,15 @@ class DummyCamera(AbstractCamera):
     def set_exposure(self, exposure):
         return self
 
+    def get_exposure(self):
+        return 0
+
+    def min_exposure(self):
+        return 0
+
+    def max_exposure(self):
+        return 0
+
     def __init__(self, logger):
         AbstractCamera.__init__(self, logger)
         self.img = np.zeros((1, 1), dtype=np.uint8)
