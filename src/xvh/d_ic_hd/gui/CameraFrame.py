@@ -19,8 +19,10 @@ class CameraFrame(Frame):
         # set the logging method
         self.logger = logger
         # check if the camera is valid
-        if not self.camera.is_valid():
-            self.log("Invalid camera requested on " + self.name)
+        if self.camera.is_valid():
+            self.log(self.name + ": Connected to " + self.camera.get_name())
+        else:
+            self.log(self.name + ": Invalid camera requested")
         # set the width and height (temporarily)
         self.w = 300
         self.h = 300
