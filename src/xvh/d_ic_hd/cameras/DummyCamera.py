@@ -8,7 +8,7 @@ class DummyCamera(AbstractCamera):
         return False
 
     def get_name(self):
-        return "dummy"
+        return "Invalid"
 
     def grab_picture(self):
         return self.img
