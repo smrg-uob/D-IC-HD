@@ -45,6 +45,9 @@ class CameraFrame(Frame):
         self.camera = camera
         self.refresh_image()
 
+    def is_valid_camera(self):
+        return self.camera.is_valid()
+
     def get_camera_name(self):
         return self.camera.get_name()
 
@@ -128,6 +131,10 @@ class CameraFrame(Frame):
 
     def max_exposure(self):
         return self.camera.max_exposure()
+
+    def save_image(self, file_name):
+        image = Image.fromarray(self.original)
+        image.save(file_name)
 
     def log(self, line):
         self.logger(line)

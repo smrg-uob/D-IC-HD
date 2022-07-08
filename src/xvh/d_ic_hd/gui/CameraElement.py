@@ -1,5 +1,6 @@
 from CameraFrame import CameraFrame
 import re
+import tkFileDialog
 import ttk
 from PIL import Image, ImageTk
 
@@ -46,7 +47,7 @@ class CameraElement:
         # Add controls frame
         self.frm_controls = tk.Frame(master=self.frm_main)
         self.frm_controls.pack(fill=tk.X, side=tk.TOP, expand=False)
-        for col in range(0, 100):
+        for col in range(0, 120):
             self.frm_controls.grid_columnconfigure(col, weight=1)
         # add camera selection
         self.lbl_cameras = tk.Label(master=self.frm_controls, text="Camera")
@@ -62,8 +63,11 @@ class CameraElement:
         self.img_icon = ImageTk.PhotoImage(Image.open("resources/camera.gif"))
         self.btn_image = tk.Button(master=self.frm_controls, width=16, height=16, image=self.img_icon, command=self.button_image_pressed)
         self.btn_image.image = self.img_icon
+        self.save_icon = ImageTk.PhotoImage(Image.open("resources/save.gif"))
+        self.btn_save = tk.Button(master=self.frm_controls, width=16, height=16, image=self.save_icon, command=self.button_save_pressed)
         self.lbl_capture.grid(row=1, column=1, columnspan=3, sticky=tk.W, padx=3, pady=1)
         self.btn_image.grid(row=1, column=4, pady=1, sticky=tk.W)
+        self.btn_save.grid(row=1, column=5, pady=1, sticky=tk.W)
         # add zoom control
         self.lbl_zoom = tk.Label(master=self.frm_controls, text="Digital Zoom")
         self.scroll_zoom = tk.Scrollbar(master=self.frm_controls, orient=tk.HORIZONTAL, command=self.zoom)
@@ -81,11 +85,13 @@ class CameraElement:
         self.exposure_value = tk.StringVar()
         self.exposure_value.set(str(self.camera_frame.get_exposure()))
         self.exposure_value.trace_variable("w", self.exposure_write)
-        self.ety_exposure_value = tk.Entry(master=self.frm_controls, width=9, textvariable=self.exposure_value, validate='key', validatecommand=exposure_validation)
+        self.ety_exposure = tk.Entry(master=self.frm_controls, width=9, textvariable=self.exposure_value, validate='key', validatecommand=exposure_validation)
         self.update_exposure_scroll()
         self.lbl_exposure.grid(row=3, column=1, columnspan=3, sticky=tk.W, padx=3, pady=1)
         self.scroll_exposure.grid(row=3, column=4, columnspan=15, sticky=(tk.W, tk.E), pady=1)
-        self.ety_exposure_value.grid(row=3, column=19, columnspan=1, pady=1)
+        self.ety_exposure.grid(row=3, column=19, columnspan=1, pady=1)
+        # set widget states based on camera status
+        self.update_widget_states()
 
     # called when a camera is selected
     def camera_selected(self, event=None):
@@ -95,15 +101,35 @@ class CameraElement:
         if camera.get_name() != self.camera_frame.get_camera_name():
             # set the camera
             self.camera_frame.set_camera(camera)
+            # configure widgets
+            self.update_widget_states()
             # update exposure
             self.exposure_value.set(str(camera.get_exposure()))
             self.update_exposure_scroll()
             # log
             self.log("Connected to " + camera.get_name())
 
+    # updates the save button state
+    def update_widget_states(self):
+        if self.camera_frame.is_valid_camera():
+            self.btn_image.configure(state="normal")
+            self.btn_save.configure(state="normal")
+            self.ety_exposure.configure(state="normal")
+        else:
+            self.btn_image.configure(state="disabled")
+            self.btn_save.configure(state="disabled")
+            self.ety_exposure.configure(state="disabled")
+
     # called when the image button is pressed
     def button_image_pressed(self):
         self.refresh_image()
+
+    # called when the save image button is pressed
+    def button_save_pressed(self):
+        file_name = tkFileDialog.asksaveasfile(mode='w', defaultextension=".png")
+        if file_name is None:
+            return
+        self.camera_frame.save_image(file_name)
 
     # called when the image is scrolled horizontally
     def scrolled_x(self, type, value, unit=""):
@@ -127,6 +153,9 @@ class CameraElement:
 
     # called when the image is zoomed
     def zoom(self, type, value, unit=""):
+        # check if the camera is valid
+        if not self.camera_frame.is_valid_camera():
+            return
         # get range values
         full_range = len(CameraFrame.ZOOM_VALUES)
         scroll_range = 1
@@ -142,6 +171,9 @@ class CameraElement:
 
     # called when the exposure is changed via the scroll bar
     def exposure_scroll(self, type, value, unit=""):
+        # check if the camera is valid
+        if not self.camera_frame.is_valid_camera():
+            return
         # get range values
         mn = self.camera_frame.min_exposure()
         mx = self.camera_frame.max_exposure()
