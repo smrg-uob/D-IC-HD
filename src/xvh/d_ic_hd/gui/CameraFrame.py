@@ -3,13 +3,10 @@ from Tkinter import Event
 from Tkinter import SE
 from PIL import Image, ImageTk
 from PIL.PngImagePlugin import PngInfo
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import matplotlib
+import numpy as np
+import matplotlib.pyplot as plt
 from xvh.d_ic_hd.overlay import overlay
-
-# tell matplotlib to use the tkinter backend
-matplotlib.use('TkAgg')
+import io
 
 
 # Class to display an image on a frame
@@ -47,19 +44,22 @@ class CameraFrame(Frame):
         self.background_image = ImageTk.PhotoImage(self.image)
         # prevent pack propagation
         self.pack_propagate(False)
-        # create the figure, axes and canvas for the image
-        dpi = 254.0
-        self.overlay_fig = Figure(figsize=(self.w/dpi, self.h/dpi), dpi=dpi)
-        self.overlay_fig.patch.set_alpha(0)
-        self.overlay_axes = self.overlay_fig.add_subplot(111)
-        self.overlay_axes.axis('off')
-        self.overlay_axes.patch.set_alpha(0)
-        self.ol_canvas = FigureCanvasTkAgg(self.overlay_fig, self)
-        self.background = self.ol_canvas.get_tk_widget()
-        self.background.configure(width=self.w, height=self.h, bg='red')
+        # create the canvas for the background
+        self.canvas = tk.Canvas(master=self, width=self.w, height=self.h)
+        # create the figure and axes for the overlay
+        dpi = 100
+        self.ol_fig = plt.figure(figsize=(self.w / dpi, self.h / dpi), dpi=dpi)
+        self.ol_fig.patch.set_alpha(0)
+        self.ol_axes = self.ol_fig.add_subplot(111)
+        self.ol_axes.axis('off')
+        self.ol_axes.patch.set_alpha(0)
+        self.do_overlay = False
+        self.overlay_original = None
+        self.overlay_image = None
+        self.overlay = None
         # bind the resize method to the background canvas
-        self.background.bind('<Configure>', self.resize_image)
-        self.background.grid(row=0, column=0, sticky='news')
+        self.canvas.bind('<Configure>', self.resize_image)
+        self.canvas.pack(fill=tk.BOTH, side=tk.LEFT, expand=True)
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
 
@@ -101,15 +101,17 @@ class CameraFrame(Frame):
             copy = self.original[x1:x2, y1:y2]
         self.image = Image.fromarray(copy).resize((self.w, self.h))
         # update the width and height of the canvas
-        self.background.configure(width=self.w, height=self.h)
+        self.canvas.configure(width=self.w, height=self.h)
         # create a dummy event to pass to the figure
         event = Event()
         event.width = self.w
         event.height = self.h
-        self.ol_canvas.resize(event)
         # set the new background
         self.background_image = ImageTk.PhotoImage(self.image)
-        self.background.create_image(self.w, self.h, image=self.background_image, anchor=SE)
+        self.canvas.create_image(self.w, self.h, image=self.background_image, anchor=SE)
+        if self.do_overlay:
+            self.refresh_overlay()
+            self.canvas.create_image(self.w, self.h, image=self.overlay, anchor=SE)
 
     def set_zoom_index(self, index):
         scale = CameraFrame.ZOOM_VALUES[max(0, min(len(CameraFrame.ZOOM_VALUES) - 1, int(index)))]
@@ -166,15 +168,17 @@ class CameraFrame(Frame):
         return self.camera.max_exposure()
 
     def plot_overlay(self):
-        x, y, z = overlay.get_rib(1000, 2)
-        self.overlay_axes.plot(x, y)
-        self.overlay_axes.set_position([0, 0, 1, 1])
-        self.ol_canvas.draw()
+        self.do_overlay = True
+        self.reset_background()
+
+    def rescale(self, x, y):
+        x = (x/max(x))*self.w
+        y = (y/max(y))*self.h
+        return x, y
 
     def remove_overlay(self):
-        self.overlay_axes.clear()
-        self.overlay_axes.patch.set_alpha(0)
-        self.ol_canvas.draw()
+        self.do_overlay = False
+        self.reset_background()
 
     def save_image(self, file_name):
         img = Image.fromarray(self.original)
@@ -182,6 +186,46 @@ class CameraFrame(Frame):
         metadata.add_text("exposure", str(self.get_exposure()))
         img.save(file_name, pnginfo=metadata)
         self.log("Saved image to " + file_name)
+
+    def refresh_overlay(self):
+        # we save the overlay plot to a PIL image and draw it on the canvas afterwards
+        # the alternatives are:
+        # - create a matplotlib tkinter canvas onto which we can plot directly and set its background as normal
+        # - create a matplotlib tkinter canvas on top of the background canvas
+        # the issues with these are:
+        # - the first approach causes the plot to appear behind the image, and has a huge hit on performance
+        # - for the second approach, it is not easily feasible to make the overlay canvas background transparent
+        if self.do_overlay:
+            # clear the previous plot
+            self.ol_axes.clear()
+            # plot the data
+            x, y, z = overlay.get_rib(1000, 2)
+            x, y = self.rescale(x, y)
+            self.ol_axes.plot(x, y)
+            # get the size
+            size = self.original.shape
+            # reset the positioning
+            self.ol_axes.patch.set_alpha(0)
+            self.ol_axes.set_position([0, 0, 1, 1])
+            self.ol_axes.set_xlim(0, size[1])
+            self.ol_axes.set_xlim(0, size[0])
+            self.ol_axes.margins(0)
+            self.ol_fig.set_size_inches((0.0 + size[1])/self.ol_fig.get_dpi(), (0.0 + size[0])/self.ol_fig.get_dpi())
+            io_buf = io.BytesIO()
+            self.ol_fig.savefig(io_buf, format='raw', dpi=self.ol_fig.get_dpi())
+            io_buf.seek(0)
+            shape = (int(self.ol_fig.bbox.bounds[3]), int(self.ol_fig.bbox.bounds[2]), -1)
+            self.overlay_original = np.reshape(np.frombuffer(io_buf.getvalue(), dtype=np.uint8), shape)
+            io_buf.close()
+            copy = self.overlay_original
+            if self.scale > 1:
+                x1 = self.dx
+                x2 = x1 + int(self.zoom_width())
+                y1 = self.dy
+                y2 = y1 + int(self.zoom_height())
+                copy = self.overlay_original[x1:x2, y1:y2]
+            self.overlay_image = Image.fromarray(copy).resize((self.w, self.h))
+            self.overlay = ImageTk.PhotoImage(self.overlay_image)
 
     def log(self, line):
         self.logger(line)
