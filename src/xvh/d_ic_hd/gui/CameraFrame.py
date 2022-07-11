@@ -91,15 +91,8 @@ class CameraFrame(Frame):
             self.reset_background()
 
     def reset_background(self):
-        # resize
-        copy = self.original
-        if self.scale > 1:
-            x1 = self.dx
-            x2 = x1 + int(self.zoom_width())
-            y1 = self.dy
-            y2 = y1 + int(self.zoom_height())
-            copy = self.original[x1:x2, y1:y2]
-        self.image = Image.fromarray(copy).resize((self.w, self.h))
+        # adjust for zooming and panning
+        self.image = self.adjust_for_zoom_and_pan(self.original)
         # update the width and height of the canvas
         self.canvas.configure(width=self.w, height=self.h)
         # create a dummy event to pass to the figure
@@ -112,6 +105,16 @@ class CameraFrame(Frame):
         if self.do_overlay:
             self.refresh_overlay()
             self.canvas.create_image(self.w, self.h, image=self.overlay, anchor=SE)
+
+    def adjust_for_zoom_and_pan(self, array):
+        copy = array
+        if self.scale > 1:
+            x1 = self.dx
+            x2 = x1 + int(self.zoom_width())
+            y1 = self.dy
+            y2 = y1 + int(self.zoom_height())
+            copy = array[x1:x2, y1:y2]
+        return Image.fromarray(copy).resize((self.w, self.h))
 
     def set_zoom_index(self, index):
         scale = CameraFrame.ZOOM_VALUES[max(0, min(len(CameraFrame.ZOOM_VALUES) - 1, int(index)))]
@@ -171,21 +174,9 @@ class CameraFrame(Frame):
         self.do_overlay = True
         self.reset_background()
 
-    def rescale(self, x, y):
-        x = (x/max(x))*self.w
-        y = (y/max(y))*self.h
-        return x, y
-
     def remove_overlay(self):
         self.do_overlay = False
         self.reset_background()
-
-    def save_image(self, file_name):
-        img = Image.fromarray(self.original)
-        metadata = PngInfo()
-        metadata.add_text("exposure", str(self.get_exposure()))
-        img.save(file_name, pnginfo=metadata)
-        self.log("Saved image to " + file_name)
 
     def refresh_overlay(self):
         # we save the overlay plot to a PIL image and draw it on the canvas afterwards
@@ -211,21 +202,33 @@ class CameraFrame(Frame):
             self.ol_axes.set_xlim(0, size[0])
             self.ol_axes.margins(0)
             self.ol_fig.set_size_inches((0.0 + size[1])/self.ol_fig.get_dpi(), (0.0 + size[0])/self.ol_fig.get_dpi())
+            # fetch the shape of the figure
+            shape = (int(self.ol_fig.bbox.bounds[3]), int(self.ol_fig.bbox.bounds[2]), -1)
+            # write the plot to a buffer
             io_buf = io.BytesIO()
             self.ol_fig.savefig(io_buf, format='raw', dpi=self.ol_fig.get_dpi())
             io_buf.seek(0)
-            shape = (int(self.ol_fig.bbox.bounds[3]), int(self.ol_fig.bbox.bounds[2]), -1)
+            # convert the bytes in the buffer to a numpy array and reshape it
             self.overlay_original = np.reshape(np.frombuffer(io_buf.getvalue(), dtype=np.uint8), shape)
+            # don't forget to close the buffer
             io_buf.close()
-            copy = self.overlay_original
-            if self.scale > 1:
-                x1 = self.dx
-                x2 = x1 + int(self.zoom_width())
-                y1 = self.dy
-                y2 = y1 + int(self.zoom_height())
-                copy = self.overlay_original[x1:x2, y1:y2]
-            self.overlay_image = Image.fromarray(copy).resize((self.w, self.h))
+            # adjust for zooming and panning
+            self.overlay_image = self.adjust_for_zoom_and_pan(self.overlay_original)
+            # convert to a tkinter friendly image
             self.overlay = ImageTk.PhotoImage(self.overlay_image)
+
+    def rescale(self, x, y):
+        # TODO: define magnification factor from the optics
+        x = (x/max(x))*self.w
+        y = (y/max(y))*self.h
+        return x, y
+
+    def save_image(self, file_name):
+        img = Image.fromarray(self.original)
+        metadata = PngInfo()
+        metadata.add_text("exposure", str(self.get_exposure()))
+        img.save(file_name, pnginfo=metadata)
+        self.log("Saved image to " + file_name)
 
     def log(self, line):
         self.logger(line)
