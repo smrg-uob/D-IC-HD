@@ -35,7 +35,6 @@ class CameraElement:
         # Create the camera frame
         self.camera_frame = CameraFrame(tk, master=frm_cvs, camera=self.cameras.get_camera(camera), name=self.name, logger=logger)
         self.camera_frame.grid(row=0, column=0, sticky=(tk.N, tk.W, tk.S, tk.E))
-        self.camera_frame.pack_propagate(False)
         # Create the scroll bars
         self.scroll_x = tk.Scrollbar(master=frm_cvs, orient=tk.HORIZONTAL, command=self.scrolled_x)
         self.scroll_y = tk.Scrollbar(master=frm_cvs, orient=tk.VERTICAL, command=self.scrolled_y)
@@ -90,6 +89,14 @@ class CameraElement:
         self.lbl_exposure.grid(row=3, column=1, columnspan=3, sticky=tk.W, padx=3, pady=1)
         self.scroll_exposure.grid(row=3, column=4, columnspan=15, sticky=(tk.W, tk.E), pady=1)
         self.ety_exposure.grid(row=3, column=19, columnspan=1, pady=1)
+        # add overlay toggle
+        self.lbl_overlay = tk.Label(master=self.frm_controls, text="Overlay")
+        self.overlay_value = tk.StringVar()
+        self.overlay_value.set("Enable")
+        self.btn_overlay = tk.Button(master=self.frm_controls, textvariable=self.overlay_value, command=self.button_overlay_pressed)
+        self.overlay_enabled = False
+        self.lbl_overlay.grid(row=4, column=1, columnspan=3, sticky=tk.W, padx=3, pady=1)
+        self.btn_overlay.grid(row=4, column=4, columnspan=15, sticky=(tk.W, tk.E), pady=1)
         # set widget states based on camera status
         self.update_widget_states()
 
@@ -133,6 +140,16 @@ class CameraElement:
         fle.close()
         # now pass the filename to the saving logic
         self.camera_frame.save_image(fle.name)
+
+    # called when the overlay button is pressed
+    def button_overlay_pressed(self):
+        if self.overlay_enabled:
+            print("disabling overlay")
+            self.overlay_value.set("Enable")
+        else:
+            self.overlay_value.set("Disable")
+            self.camera_frame.plot_overlay()
+        self.overlay_enabled = not self.overlay_enabled
 
     # called when the image is scrolled horizontally
     def scrolled_x(self, type, value, unit=""):

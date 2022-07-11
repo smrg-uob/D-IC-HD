@@ -1,7 +1,13 @@
 from Tkinter import Frame
-from Tkinter import Label
+from Tkinter import SE
 from PIL import Image, ImageTk
 from PIL.PngImagePlugin import PngInfo
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib
+from xvh.d_ic_hd.overlay import overlay
+
+matplotlib.use('TkAgg')
 
 
 # Class to display an image on a frame
@@ -24,7 +30,7 @@ class CameraFrame(Frame):
             self.log(self.name + ": Connected to " + self.camera.get_name())
         else:
             self.log(self.name + ": Invalid camera requested")
-        # set the width and height (temporarily)
+        # set the image width and height (temporarily)
         self.w = 300
         self.h = 300
         # set the zoom and pan offset
@@ -33,14 +39,21 @@ class CameraFrame(Frame):
         self.dy = 0
         self.max_dx = 0
         self.max_dy = 0
-        # take an image, and copy and resize it
+        # take an image, copy and resize it, and convert it to a tkinter compatible image
         self.original = self.camera.grab_picture()
         self.image = Image.fromarray(self.original).resize((self.w, self.h))
-        # set the background image and bind the resize method to it
         self.background_image = ImageTk.PhotoImage(self.image)
-        self.background = Label(self, image=self.background_image)
-        self.background.pack(fill=tk.BOTH, expand=tk.YES)
-        self.background.bind('<Configure>', self.resize_image)
+        # create the overlay figure, axes and canvas
+        self.overlay_fig = Figure(figsize=(self.w, self.h), dpi=1)
+        self.overlay_axes = self.overlay_fig.gca()
+        self.overlay_axes.axis('off')
+        self.canvas = FigureCanvasTkAgg(self.overlay_fig, self)
+        self.canvas.get_tk_widget().configure(width=self.w, height=self.h, bg='red')
+        # prevent pack propagation and pack the canvas
+        self.pack_propagate(False)
+        self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, side=tk.RIGHT)
+        # bind the resize method to the
+        self.canvas.get_tk_widget().bind('<Configure>', self.resize_image)
 
     def set_camera(self, camera):
         self.camera = camera
@@ -60,10 +73,14 @@ class CameraFrame(Frame):
 
     def resize_image(self, event):
         # fetch new width and height
-        self.w = event.width
-        self.h = event.height
-        # reset the background
-        self.reset_background()
+        new_w = event.width
+        new_h = event.height
+        # update the width and height if they have changed
+        if new_w != self.w or new_h != self.h:
+            self.w = new_w
+            self.h = new_h
+            # reset the background
+            self.reset_background()
 
     def reset_background(self):
         # resize
@@ -75,9 +92,12 @@ class CameraFrame(Frame):
             y2 = y1 + int(self.zoom_height())
             copy = self.original[x1:x2, y1:y2]
         self.image = Image.fromarray(copy).resize((self.w, self.h))
+        # update the figure width and height
+        self.overlay_fig.set_size_inches(self.w, self.h)
+        self.canvas.get_tk_widget().configure(width=self.w, height=self.h)
         # set the new background
         self.background_image = ImageTk.PhotoImage(self.image)
-        self.background.configure(image=self.background_image)
+        self.canvas.get_tk_widget().create_image(self.w, self.h, image=self.background_image, anchor=SE)
 
     def set_zoom_index(self, index):
         scale = CameraFrame.ZOOM_VALUES[max(0, min(len(CameraFrame.ZOOM_VALUES) - 1, int(index)))]
@@ -132,6 +152,11 @@ class CameraFrame(Frame):
 
     def max_exposure(self):
         return self.camera.max_exposure()
+
+    def plot_overlay(self):
+        x, y, z = overlay.get_rib(1000, 2)
+        self.overlay_axes.scatter(x, y)
+        self.canvas.get_tk_widget().draw()
 
     def save_image(self, file_name):
         img = Image.fromarray(self.original)
