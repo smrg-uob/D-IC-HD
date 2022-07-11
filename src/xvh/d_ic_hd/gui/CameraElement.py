@@ -144,8 +144,8 @@ class CameraElement:
     # called when the overlay button is pressed
     def button_overlay_pressed(self):
         if self.overlay_enabled:
-            print("disabling overlay")
             self.overlay_value.set("Enable")
+            self.camera_frame.remove_overlay()
         else:
             self.overlay_value.set("Disable")
             self.camera_frame.plot_overlay()
