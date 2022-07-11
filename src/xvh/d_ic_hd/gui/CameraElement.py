@@ -126,10 +126,13 @@ class CameraElement:
 
     # called when the save image button is pressed
     def button_save_pressed(self):
-        file_name = tkFileDialog.asksaveasfile(mode='w', defaultextension=".png")
-        if file_name is None:
+        fle = tkFileDialog.asksaveasfile(mode='w', defaultextension=".png")
+        if fle is None:
             return
-        self.camera_frame.save_image(file_name)
+        # the file returned is opened, we need to close it first
+        fle.close()
+        # now pass the filename to the saving logic
+        self.camera_frame.save_image(fle.name)
 
     # called when the image is scrolled horizontally
     def scrolled_x(self, type, value, unit=""):
@@ -176,6 +179,7 @@ class CameraElement:
             return
         # get range values
         mn = self.camera_frame.min_exposure()
+
         mx = self.camera_frame.max_exposure()
         rng = mx - mn
         # get current value

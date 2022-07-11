@@ -1,6 +1,8 @@
 from Tkinter import Frame
 from Tkinter import Label
 from PIL import Image, ImageTk
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 # Class to display an image on a frame
@@ -133,8 +135,9 @@ class CameraFrame(Frame):
         return self.camera.max_exposure()
 
     def save_image(self, file_name):
-        image = Image.fromarray(self.original)
-        image.save(file_name)
+        img = Image.fromarray(self.original)
+        img.save(file_name)
+        self.log("Saved image to " + file_name)
 
     def log(self, line):
         self.logger(line)
