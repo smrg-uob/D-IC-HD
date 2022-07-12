@@ -122,10 +122,12 @@ class CameraElement:
             self.btn_image.configure(state="normal")
             self.btn_save.configure(state="normal")
             self.ety_exposure.configure(state="normal")
+            self.btn_overlay.configure(state="normal")
         else:
             self.btn_image.configure(state="disabled")
             self.btn_save.configure(state="disabled")
             self.ety_exposure.configure(state="disabled")
+            self.btn_overlay.configure(state="disabled")
 
     # called when the image button is pressed
     def button_image_pressed(self):
