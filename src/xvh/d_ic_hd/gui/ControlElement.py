@@ -85,7 +85,7 @@ class ControlElement:
         if len(val) == 0:
             return True
         try:
-            float(val)
+            nr = float(val)
         except:
             return False
-        return True
+        return nr > 0

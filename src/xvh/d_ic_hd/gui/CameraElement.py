@@ -99,9 +99,24 @@ class CameraElement:
         self.overlay_value = tk.StringVar()
         self.overlay_value.set("Enable")
         self.btn_overlay = tk.Button(master=self.frm_controls, textvariable=self.overlay_value, command=self.button_overlay_pressed)
+        self.lbl_dx = tk.Label(master=self.frm_controls, text="dx")
+        float_validation = (self.frm_controls.register(CameraElement.validate_float), '%P')
+        self.dx_value = tk.StringVar()
+        self.dx_value.set(str(0.0))
+        self.dx_value.trace_variable("w", self.dx_write)
+        self.ety_dx = tk.Entry(master=self.frm_controls, width=3, textvariable=self.dx_value, validate='key', validatecommand=float_validation)
+        self.lbl_dy = tk.Label(master=self.frm_controls, text="dy")
+        self.dy_value = tk.StringVar()
+        self.dy_value.set(str(0.0))
+        self.dy_value.trace_variable("w", self.dy_write)
+        self.ety_dy = tk.Entry(master=self.frm_controls, width=3, textvariable=self.dy_value, validate='key', validatecommand=float_validation)
         self.overlay_enabled = False
         self.lbl_overlay.grid(row=4, column=1, columnspan=3, sticky=tk.W, padx=3, pady=1)
-        self.btn_overlay.grid(row=4, column=4, columnspan=15, sticky=(tk.W, tk.E), pady=1)
+        self.btn_overlay.grid(row=4, column=4, columnspan=7, sticky=(tk.W, tk.E), pady=1)
+        self.lbl_dx.grid(row=4, column=11, columnspan=1, sticky=(tk.W, tk.E), pady=1)
+        self.ety_dx.grid(row=4, column=12, columnspan=3, sticky=(tk.W, tk.E), pady=1)
+        self.lbl_dy.grid(row=4, column=15, columnspan=1, sticky=(tk.W, tk.E), pady=1)
+        self.ety_dy.grid(row=4, column=16, columnspan=3, sticky=(tk.W, tk.E), pady=1)
         # set widget states based on camera status
         self.update_widget_states()
 
@@ -128,11 +143,15 @@ class CameraElement:
             self.btn_save.configure(state="normal")
             self.ety_exposure.configure(state="normal")
             self.btn_overlay.configure(state="normal")
+            self.ety_dx.configure(state="normal")
+            self.ety_dy.configure(state="normal")
         else:
             self.btn_image.configure(state="disabled")
             self.btn_save.configure(state="disabled")
             self.ety_exposure.configure(state="disabled")
             self.btn_overlay.configure(state="disabled")
+            self.ety_dx.configure(state="disabled")
+            self.ety_dy.configure(state="disabled")
 
     # called when the image button is pressed
     def button_image_pressed(self):
@@ -253,8 +272,24 @@ class CameraElement:
     def refresh_image(self):
         self.camera_frame.refresh_image()
 
+    def dx_write(self, *args):
+        val = self.ety_dx.get()
+        if len(val) == 0 or val == '-':
+            dx = 0
+        else:
+            dx = float(val)
+        self.camera_frame.set_overlay_dx(dx)
+
+    def dy_write(self, *args):
+        val = self.ety_dy.get()
+        if len(val) == 0 or val == '-':
+            dy = 0
+        else:
+            dy = float(val)
+        self.camera_frame.set_overlay_dy(dy)
+
     def update_magnification(self, magnification):
-        self.camera_frame.update_magnification(magnification)
+        self.camera_frame.set_magnification(magnification)
 
     def log(self, line):
         self.logger(self.name + ": " + line)
@@ -264,6 +299,16 @@ class CameraElement:
         if len(val) == 0:
             return True
         return re.match('^[0-9]*$', val) is not None
+
+    @staticmethod
+    def validate_float(val):
+        if len(val) == 0 or val == '-':
+            return True
+        try:
+            float(val)
+        except:
+            return False
+        return True
 
     @staticmethod
     def handle_scroll(scroll_bar, full_range, scroll_range, type, value, unit=""):

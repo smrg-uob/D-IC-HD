@@ -46,6 +46,9 @@ class CameraFrame(Frame):
         self.scale_y = 1
         # initialize magnification
         self.magnification = 1.0
+        # initialize overlay offsets
+        self.ol_dx = 0.0
+        self.ol_dy = 0.0
         # take an image, copy and resize it, and convert it to a tkinter compatible image
         self.original = self.camera.grab_picture()
         self.image = Image.fromarray(self.original).resize((self.w, self.h))
@@ -56,7 +59,7 @@ class CameraFrame(Frame):
         # create the canvas for the background
         self.canvas = tk.Canvas(master=self, width=self.w, height=self.h)
         # create the figure and axes for the overlay
-        dpi = 100
+        dpi = 200
         self.ol_fig = plt.figure(figsize=(self.w / dpi, self.h / dpi), dpi=dpi)
         self.ol_fig.patch.set_alpha(0)
         self.ol_axes = self.ol_fig.add_subplot(111)
@@ -187,6 +190,27 @@ class CameraFrame(Frame):
     def max_exposure(self):
         return self.camera.max_exposure()
 
+    def set_magnification(self, magnification):
+        if magnification != self.magnification:
+            self.magnification = magnification
+            self.force_overlay_update()
+
+    def get_overlay_dx(self):
+        return self.ol_dx
+
+    def get_overlay_dy(self):
+        return self.ol_dy
+
+    def set_overlay_dx(self, dx):
+        if dx != self.get_overlay_dx():
+            self.ol_dx = dx
+            self.force_overlay_update()
+
+    def set_overlay_dy(self, dy):
+        if dy != self.get_overlay_dy():
+            self.ol_dy = dy
+            self.force_overlay_update()
+
     def plot_overlay(self):
         self.do_overlay = True
         self.reset_background()
@@ -194,6 +218,11 @@ class CameraFrame(Frame):
     def remove_overlay(self):
         self.do_overlay = False
         self.reset_background()
+
+    def force_overlay_update(self):
+        self.overlay_update = True
+        if self.do_overlay:
+            self.reset_background()
 
     def refresh_overlay(self):
         # we save the overlay plot to a PIL image and draw it on the canvas afterwards
@@ -250,8 +279,8 @@ class CameraFrame(Frame):
         f_x = m*(w + 0.0)/hfov
         f_y = m*(h + 0.0)/vfov
         # scale the overlay from mm to pixels
-        x = x*f_x
-        y = y*f_y
+        x = (x + self.get_overlay_dx())*f_x
+        y = (y + self.get_overlay_dy())*f_y
         return x, y
 
     def save_image(self, file_name):
@@ -260,13 +289,6 @@ class CameraFrame(Frame):
         metadata.add_text("exposure", str(self.get_exposure()))
         img.save(file_name, pnginfo=metadata)
         self.log("Saved image to " + file_name)
-
-    def update_magnification(self, magnification):
-        if magnification != self.magnification:
-            self.magnification = magnification
-            self.overlay_update = True
-            if self.do_overlay:
-                self.reset_background()
 
     def log(self, line):
         self.logger(line)
