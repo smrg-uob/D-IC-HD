@@ -8,7 +8,7 @@ h_r = 0.37
 
 def get_rib(points, pitches):
     # Create x, y and z arrays for the ribs
-    t = np.arange(0, 1, (pitches + 0.0)/(0.0 + 2*points))
+    t = np.arange(-0.5, 0.5, (pitches + 0.0)/(0.0 + 2*points))
     alpha = np.multiply(t, 2*np.pi*pitches/n_r)
     x = np.multiply(t, pitches)
     y = np.multiply(np.cos(alpha), r_c + h_r)
