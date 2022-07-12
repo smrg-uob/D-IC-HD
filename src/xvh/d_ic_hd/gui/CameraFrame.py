@@ -216,8 +216,8 @@ class CameraFrame(Frame):
                 # reset the positioning
                 self.ol_axes.patch.set_alpha(0)
                 self.ol_axes.set_position([0, 0, 1, 1])
-                self.ol_axes.set_xlim(0, size[1])
-                self.ol_axes.set_xlim(0, size[0])
+                self.ol_axes.set_xlim(-size[1]/2.0, size[1]/2.0)
+                self.ol_axes.set_ylim(-size[0]/2.0, size[0]/2.0)
                 self.ol_axes.margins(0)
                 self.ol_fig.set_size_inches((0.0 + size[1])/self.ol_fig.get_dpi(), (0.0 + size[0])/self.ol_fig.get_dpi())
                 # fetch the shape of the figure
@@ -238,9 +238,20 @@ class CameraFrame(Frame):
             self.overlay = ImageTk.PhotoImage(self.overlay_image)
 
     def rescale_overlay(self, x, y):
-        # TODO: define magnification factor from the optics
-        x = (x/max(x))*self.w
-        y = (y/max(y))*self.h
+        # fetch field of view values
+        hfov = self.camera.hfov()
+        vfov = self.camera.vfov()
+        # fetch magnification
+        m = self.magnification
+        # fetch image size
+        w = self.image_width()
+        h = self.image_height()
+        # calculate scales
+        f_x = m*(w + 0.0)/hfov
+        f_y = m*(h + 0.0)/vfov
+        # scale the overlay from mm to pixels
+        x = x*f_x
+        y = y*f_y
         return x, y
 
     def save_image(self, file_name):
@@ -254,6 +265,8 @@ class CameraFrame(Frame):
         if magnification != self.magnification:
             self.magnification = magnification
             self.overlay_update = True
+            if self.do_overlay:
+                self.reset_background()
 
     def log(self, line):
         self.logger(line)

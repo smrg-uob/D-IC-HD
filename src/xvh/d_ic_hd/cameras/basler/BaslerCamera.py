@@ -43,6 +43,15 @@ class BaslerCamera(AbstractCamera):
 
     def max_exposure(self):
         return self.max_exp
+        pass
+
+    def hfov(self):
+        # TODO: check if this can be queried from the camera
+        return 0.00345*2448
+
+    def vfov(self):
+        # TODO: check if this can be queried from the camera
+        return 0.00345*2048
 
     def __init__(self, camera_info, logger):
         AbstractCamera.__init__(self, logger)

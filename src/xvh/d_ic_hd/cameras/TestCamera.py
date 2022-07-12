@@ -25,6 +25,13 @@ class TestCamera(AbstractCamera):
 
     def max_exposure(self):
         return 0
+        pass
+
+    def hfov(self):
+        return self.img.shape[1]*(4*2.77)/1413
+
+    def vfov(self):
+        return self.img.shape[0]*(4*2.77)/1413
 
     def __init__(self, logger):
         AbstractCamera.__init__(self, logger)

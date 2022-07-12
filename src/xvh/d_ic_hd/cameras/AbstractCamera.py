@@ -24,5 +24,11 @@ class AbstractCamera:
     def max_exposure(self):
         pass
 
+    def hfov(self):
+        pass
+
+    def vfov(self):
+        pass
+
     def log(self, line):
         self.logger(line)

@@ -24,6 +24,13 @@ class DummyCamera(AbstractCamera):
 
     def max_exposure(self):
         return 0
+        pass
+
+    def hfov(self):
+        return 0
+
+    def vfov(self):
+        return 0
 
     def __init__(self, logger):
         AbstractCamera.__init__(self, logger)
