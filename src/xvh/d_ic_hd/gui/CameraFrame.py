@@ -49,6 +49,7 @@ class CameraFrame(Frame):
         # initialize overlay offsets
         self.ol_dx = 0.0
         self.ol_dy = 0.0
+        self.ol_flip = False
         # take an image, copy and resize it, and convert it to a tkinter compatible image
         self.original = self.camera.grab_picture()
         self.image = Image.fromarray(self.original).resize((self.w, self.h))
@@ -211,6 +212,10 @@ class CameraFrame(Frame):
             self.ol_dy = dy
             self.force_overlay_update()
 
+    def flip_overlay(self):
+        self.ol_flip = not self.ol_flip
+        self.force_overlay_update()
+
     def plot_overlay(self):
         self.do_overlay = True
         self.reset_background()
@@ -237,7 +242,7 @@ class CameraFrame(Frame):
                 # clear the previous plot
                 self.ol_axes.clear()
                 # plot the data
-                x, y, z = overlay.get_rib(1000, 2)
+                x, y, z = overlay.get_rib(1000)
                 x, y = self.rescale_overlay(x, y)
                 self.ol_axes.plot(x, y)
                 # get the size
@@ -279,6 +284,8 @@ class CameraFrame(Frame):
         f_x = m*(w + 0.0)/hfov
         f_y = m*(h + 0.0)/vfov
         # scale the overlay from mm to pixels
+        if self.ol_flip:
+            x = -x
         x = (x + self.get_overlay_dx())*f_x
         y = (y + self.get_overlay_dy())*f_y
         return x, y

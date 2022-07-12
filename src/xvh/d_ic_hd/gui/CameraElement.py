@@ -110,6 +110,7 @@ class CameraElement:
         self.dy_value.set(str(0.0))
         self.dy_value.trace_variable("w", self.dy_write)
         self.ety_dy = tk.Entry(master=self.frm_controls, width=3, textvariable=self.dy_value, validate='key', validatecommand=float_validation)
+        self.btn_flip = tk.Button(master=self.frm_controls, width=7, text="Flip", command=self.button_flip_pressed)
         self.overlay_enabled = False
         self.lbl_overlay.grid(row=4, column=1, columnspan=3, sticky=tk.W, padx=3, pady=1)
         self.btn_overlay.grid(row=4, column=4, columnspan=7, sticky=(tk.W, tk.E), pady=1)
@@ -117,6 +118,7 @@ class CameraElement:
         self.ety_dx.grid(row=4, column=12, columnspan=3, sticky=(tk.W, tk.E), pady=1)
         self.lbl_dy.grid(row=4, column=15, columnspan=1, sticky=(tk.W, tk.E), pady=1)
         self.ety_dy.grid(row=4, column=16, columnspan=3, sticky=(tk.W, tk.E), pady=1)
+        self.btn_flip.grid(row=4, column=19, sticky=tk.W, pady=1, padx=10)
         # set widget states based on camera status
         self.update_widget_states()
 
@@ -176,6 +178,10 @@ class CameraElement:
             self.overlay_value.set("Disable")
             self.camera_frame.plot_overlay()
         self.overlay_enabled = not self.overlay_enabled
+
+    # called when the flip button is pressed
+    def button_flip_pressed(self):
+        self.camera_frame.flip_overlay()
 
     # called when the image is scrolled horizontally
     def scrolled_x(self, type, value, unit=""):
