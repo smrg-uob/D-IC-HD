@@ -246,6 +246,10 @@ class CameraFrame(Frame):
                 self.plot_data(x, y, "blue")
                 x, y, z = overlay.get_rib_2()
                 self.plot_data(x, y, "blue")
+                x, y, z = overlay.get_drill_1()
+                self.plot_data(x, y, "red")
+                x, y, z = overlay.get_drill_2()
+                self.plot_data(x, y, "red")
                 # get the size
                 size = self.original.shape
                 # reset the positioning
