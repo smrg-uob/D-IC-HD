@@ -37,6 +37,10 @@ class CameraFrame(Frame):
         self.dy = 0
         self.max_dx = 0
         self.max_dy = 0
+        self.ar_p = 1
+        self.ar_w = 1
+        self.scale_x = 1
+        self.scale_y = 1
         # take an image, copy and resize it, and convert it to a tkinter compatible image
         self.original = self.camera.grab_picture()
         self.image = Image.fromarray(self.original).resize((self.w, self.h))
@@ -76,6 +80,8 @@ class CameraFrame(Frame):
     def refresh_image(self):
         # take a new picture
         self.original = self.camera.grab_picture()
+        # update aspect ratio
+        self.ar_p = (0.0 + self.image_width())/(0.0 + self.image_height())
         # reset the background
         self.reset_background()
 
@@ -87,6 +93,18 @@ class CameraFrame(Frame):
         if new_w != self.w or new_h != self.h:
             self.w = new_w
             self.h = new_h
+            # update the aspect ratio
+            self.ar_w = (0.0 + self.w)/(0.0 + self.h)
+            # update the ar scale
+            if self.ar_w == self.ar_p:
+                self.scale_x = 1
+                self.scale_y = 1
+            elif self.ar_w < self.ar_p:
+                self.scale_x = self.ar_p / self.ar_w
+                self.scale_y = 1
+            else:
+                self.scale_x = 1
+                self.scale_y = self.ar_w / self.ar_p
             # reset the background
             self.reset_background()
 
@@ -103,13 +121,11 @@ class CameraFrame(Frame):
             self.canvas.create_image(self.w, self.h, image=self.overlay, anchor=SE)
 
     def adjust_for_zoom_and_pan(self, array):
-        copy = array
-        if self.scale > 1:
-            x1 = self.dx
-            x2 = x1 + int(self.zoom_width())
-            y1 = self.dy
-            y2 = y1 + int(self.zoom_height())
-            copy = array[x1:x2, y1:y2]
+        x1 = self.dx
+        x2 = x1 + int(self.zoom_width())
+        y1 = self.dy
+        y2 = y1 + int(self.zoom_height())
+        copy = array[x1:x2, y1:y2]
         return Image.fromarray(copy).resize((self.w, self.h))
 
     def set_zoom_index(self, index):
@@ -123,12 +139,8 @@ class CameraFrame(Frame):
             self.set_pan(self.dx, self.dy)
 
     def calculate_pan_bounds(self):
-        if self.scale == 1:
-            self.max_dx = 0
-            self.max_dy = 0
-        else:
-            self.max_dx = self.image_width() - int(self.zoom_width())
-            self.max_dy = self.image_height() - int(self.zoom_height())
+        self.max_dx = self.image_width() - int(self.zoom_width())
+        self.max_dy = self.image_height() - int(self.zoom_height())
 
     def set_pan_x(self, dx):
         self.set_pan(dx, self.dy)
@@ -149,10 +161,10 @@ class CameraFrame(Frame):
         return self.original.shape[1]
 
     def zoom_width(self):
-        return float(self.image_width())/float(self.scale)
+        return float(self.image_width())/float(self.scale*self.scale_x)
 
     def zoom_height(self):
-        return float(self.image_height())/float(self.scale)
+        return float(self.image_height())/float(self.scale*self.scale_y)
 
     def set_exposure(self, exposure):
         self.camera.set_exposure(exposure)
