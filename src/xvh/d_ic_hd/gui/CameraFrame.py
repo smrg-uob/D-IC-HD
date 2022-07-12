@@ -46,10 +46,11 @@ class CameraFrame(Frame):
         self.scale_y = 1
         # initialize magnification
         self.magnification = 1.0
-        # initialize overlay offsets
+        # initialize overlay offsets and projection
         self.ol_dx = 0.0
         self.ol_dy = 0.0
         self.ol_flip = False
+        self.ol_proj = 0.0
         # take an image, copy and resize it, and convert it to a tkinter compatible image
         self.original = self.camera.grab_picture()
         self.image = Image.fromarray(self.original).resize((self.w, self.h))
@@ -196,6 +197,11 @@ class CameraFrame(Frame):
             self.magnification = magnification
             self.force_overlay_update()
 
+    def set_projection(self, projection):
+        if projection != self.ol_proj:
+            self.ol_proj = projection
+            self.force_overlay_update()
+
     def get_overlay_dx(self):
         return self.ol_dx
 
@@ -243,13 +249,13 @@ class CameraFrame(Frame):
                 self.ol_axes.clear()
                 # plot the data
                 x, y, z = overlay.get_rib_1()
-                self.plot_data(x, y, "blue")
+                self.plot_data(x, y, z, "blue")
                 x, y, z = overlay.get_rib_2()
-                self.plot_data(x, y, "blue")
+                self.plot_data(x, y, z, "blue")
                 x, y, z = overlay.get_drill_1()
-                self.plot_data(x, y, "red")
+                self.plot_data(x, y, z, "red")
                 x, y, z = overlay.get_drill_2()
-                self.plot_data(x, y, "red")
+                self.plot_data(x, y, z, "red")
                 # get the size
                 size = self.original.shape
                 # reset the positioning
@@ -276,11 +282,11 @@ class CameraFrame(Frame):
             # convert to a tkinter friendly image
             self.overlay = ImageTk.PhotoImage(self.overlay_image)
 
-    def plot_data(self, x, y, colour):
-        x, y = self.rescale_overlay(x, y)
+    def plot_data(self, x, y, z, colour):
+        x, y = self.rescale_overlay(x, y, z)
         self.ol_axes.plot(x, y, color=colour)
 
-    def rescale_overlay(self, x, y):
+    def rescale_overlay(self, x, y, z):
         # fetch field of view values
         hfov = self.camera.hfov()
         vfov = self.camera.vfov()
@@ -292,11 +298,15 @@ class CameraFrame(Frame):
         # calculate scales
         f_x = m*(w + 0.0)/hfov
         f_y = m*(h + 0.0)/vfov
-        # scale the overlay from mm to pixels
+        # flip x if required
         if self.ol_flip:
             x = -x
-        x = (x + self.get_overlay_dx())*f_x
-        y = (y + self.get_overlay_dy())*f_y
+        # project the z element away and apply the offset
+        x = x + self.ol_proj*z + self.get_overlay_dx()
+        y = y + self.get_overlay_dy()
+        # scale the overlay from mm to pixels
+        x = x*f_x
+        y = y*f_y
         return x, y
 
     def save_image(self, file_name):

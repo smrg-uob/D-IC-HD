@@ -41,6 +41,15 @@ class ControlElement:
                                       validate='key', validatecommand=magnification_validation)
         self.lbl_objective.grid(row=2, column=0, sticky="w", padx=3, pady=1)
         self.ety_objective.grid(row=2, column=1, sticky="e", pady=1)
+        self.lbl_projection = tk.Label(master=self.frm_optics, text="Projection")
+        projection_validation = (self.frm_optics.register(ControlElement.validate_projection), '%P')
+        self.projection_value = tk.StringVar()
+        self.projection_value.set(str(0.0))
+        self.projection_value.trace_variable("w", self.projection_write)
+        self.ety_projection = tk.Entry(master=self.frm_optics, width=9, textvariable=self.projection_value,
+                                          validate='key', validatecommand=projection_validation)
+        self.lbl_projection.grid(row=3, column=0, sticky="w", padx=3, pady=1)
+        self.ety_projection.grid(row=3, column=1, sticky="e", pady=1)
         # Populate DIC calibration controls
         self.lbl_cali_dic = tk.Label(master=self.frm_cali_dic, text='DIC Calibration', font=(font_type, font_size))
         self.lbl_cali_dic.grid(row=0, column=0, sticky="w", pady=2)
@@ -77,6 +86,17 @@ class ControlElement:
         for camera in self.cameras:
             camera.update_magnification(magnification)
 
+    def projection_write(self, *args):
+        projection = self.get_projection()
+        for camera in self.cameras:
+            camera.update_projection(projection)
+
+    def get_projection(self):
+        val = self.projection_value.get()
+        if len(val) == 0 or val == '-':
+            return 0.0
+        return float(val)
+
     def log(self, line):
         self.logger(line)
 
@@ -89,3 +109,13 @@ class ControlElement:
         except:
             return False
         return nr > 0
+
+    @staticmethod
+    def validate_projection(val):
+        if len(val) == 0 or val == '-':
+            return True
+        try:
+            float(val)
+        except:
+            return False
+        return True

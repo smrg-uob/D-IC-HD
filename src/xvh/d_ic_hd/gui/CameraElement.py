@@ -297,6 +297,9 @@ class CameraElement:
     def update_magnification(self, magnification):
         self.camera_frame.set_magnification(magnification)
 
+    def update_projection(self, projection):
+        self.camera_frame.set_projection(projection)
+
     def log(self, line):
         self.logger(self.name + ": " + line)
 
