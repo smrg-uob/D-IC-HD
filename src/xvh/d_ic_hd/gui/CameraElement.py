@@ -1,6 +1,7 @@
 from CameraFrame import CameraFrame
 import re
 import tkFileDialog
+import tkFont
 import ttk
 from PIL import Image, ImageTk
 
@@ -20,8 +21,12 @@ class CameraElement:
         self.frm_main.pack(fill=tk.BOTH, side=tk.LEFT, expand=True)
         # Prevent the frame from resetting its size
         self.frm_main.pack_propagate(False)
+        # Fetch default font properties
+        default_font = tkFont.nametofont("TkDefaultFont")
+        font_size = default_font.cget("size")
+        font_type = default_font.cget("family")
         # Add a label to the camera frame
-        lbl = tk.Label(master=self.frm_main, text=self.name)
+        lbl = tk.Label(master=self.frm_main, text=self.name, font=(font_type, font_size + 2))
         lbl.pack()
         # Create a sub-frame for the canvas with scrollbars
         frm_cvs = tk.Frame(master=self.frm_main)
@@ -247,6 +252,9 @@ class CameraElement:
 
     def refresh_image(self):
         self.camera_frame.refresh_image()
+
+    def update_magnification(self, magnification):
+        self.camera_frame.update_magnification(magnification)
 
     def log(self, line):
         self.logger(self.name + ": " + line)

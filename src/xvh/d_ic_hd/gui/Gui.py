@@ -1,4 +1,5 @@
 from CameraElement import CameraElement
+from ControlElement import ControlElement
 from datetime import date, datetime
 from xvh.d_ic_hd.cameras.CameraList import CameraList
 import Tkinter as tk
@@ -48,6 +49,9 @@ class Gui:
         # Create the camera elements
         self.camera_1 = CameraElement(tk, self.frm_cameras, "CAM 1", self.cameras, 0, self.log)
         self.camera_2 = CameraElement(tk, self.frm_cameras, "CAM 2", self.cameras, 1, self.log)
+
+        # Create the control element
+        self.controls = ControlElement(tk, self.frm_input, (self.camera_1, self.camera_2), self.log)
 
     def launch_gui(self):
         self.log("DI-C-HD Launched Successfully")

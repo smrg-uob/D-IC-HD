@@ -39,10 +39,13 @@ class CameraFrame(Frame):
         self.dy = 0
         self.max_dx = 0
         self.max_dy = 0
+        # initialize aspect ratios
         self.ar_p = 1
         self.ar_w = 1
         self.scale_x = 1
         self.scale_y = 1
+        # initialize magnification
+        self.magnification = 1.0
         # take an image, copy and resize it, and convert it to a tkinter compatible image
         self.original = self.camera.grab_picture()
         self.image = Image.fromarray(self.original).resize((self.w, self.h))
@@ -206,7 +209,7 @@ class CameraFrame(Frame):
                 self.ol_axes.clear()
                 # plot the data
                 x, y, z = overlay.get_rib(1000, 2)
-                x, y = self.rescale(x, y)
+                x, y = self.rescale_overlay(x, y)
                 self.ol_axes.plot(x, y)
                 # get the size
                 size = self.original.shape
@@ -234,7 +237,7 @@ class CameraFrame(Frame):
             # convert to a tkinter friendly image
             self.overlay = ImageTk.PhotoImage(self.overlay_image)
 
-    def rescale(self, x, y):
+    def rescale_overlay(self, x, y):
         # TODO: define magnification factor from the optics
         x = (x/max(x))*self.w
         y = (y/max(y))*self.h
@@ -246,6 +249,11 @@ class CameraFrame(Frame):
         metadata.add_text("exposure", str(self.get_exposure()))
         img.save(file_name, pnginfo=metadata)
         self.log("Saved image to " + file_name)
+
+    def update_magnification(self, magnification):
+        if magnification != self.magnification:
+            self.magnification = magnification
+            self.overlay_update = True
 
     def log(self, line):
         self.logger(line)
