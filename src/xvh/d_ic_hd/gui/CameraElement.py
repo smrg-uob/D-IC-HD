@@ -234,7 +234,7 @@ class CameraElement:
         self.camera_frame.set_exposure(exposure)
 
     def update_exposure_scroll(self):
-        if self.camera_frame.max_exposure() == 0:
+        if self.camera_frame.max_exposure() == 0 or self.camera_frame.max_exposure() == self.camera_frame.min_exposure():
             pos = 0
         else:
             pos = (int(self.exposure_value.get()) + 0.0)/(self.camera_frame.max_exposure() - self.camera_frame.min_exposure())

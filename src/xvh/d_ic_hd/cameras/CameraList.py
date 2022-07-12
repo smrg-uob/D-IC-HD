@@ -1,4 +1,5 @@
 from DummyCamera import DummyCamera as Dummy
+from TestCamera import TestCamera
 from basler.BaslerCamera import BaslerCamera
 
 
@@ -10,6 +11,7 @@ class CameraList:
         for camera in BaslerCamera.available_cameras(self.logger):
             self.cameras.append(camera)
             self.names.append(camera.get_name())
+        self.cameras.append(TestCamera(self.logger))
         return self
 
     def camera_count(self):
