@@ -1,5 +1,4 @@
 from Tkinter import Frame
-from Tkinter import Event
 from Tkinter import SE
 from PIL import Image, ImageTk
 from PIL.PngImagePlugin import PngInfo
@@ -53,6 +52,7 @@ class CameraFrame(Frame):
         self.ol_axes = self.ol_fig.add_subplot(111)
         self.ol_axes.axis('off')
         self.ol_axes.patch.set_alpha(0)
+        self.overlay_update = True
         self.do_overlay = False
         self.overlay_original = None
         self.overlay_image = None
@@ -95,10 +95,6 @@ class CameraFrame(Frame):
         self.image = self.adjust_for_zoom_and_pan(self.original)
         # update the width and height of the canvas
         self.canvas.configure(width=self.w, height=self.h)
-        # create a dummy event to pass to the figure
-        event = Event()
-        event.width = self.w
-        event.height = self.h
         # set the new background
         self.background_image = ImageTk.PhotoImage(self.image)
         self.canvas.create_image(self.w, self.h, image=self.background_image, anchor=SE)
@@ -187,31 +183,34 @@ class CameraFrame(Frame):
         # - the first approach causes the plot to appear behind the image, and has a huge hit on performance
         # - for the second approach, it is not easily feasible to make the overlay canvas background transparent
         if self.do_overlay:
-            # clear the previous plot
-            self.ol_axes.clear()
-            # plot the data
-            x, y, z = overlay.get_rib(1000, 2)
-            x, y = self.rescale(x, y)
-            self.ol_axes.plot(x, y)
-            # get the size
-            size = self.original.shape
-            # reset the positioning
-            self.ol_axes.patch.set_alpha(0)
-            self.ol_axes.set_position([0, 0, 1, 1])
-            self.ol_axes.set_xlim(0, size[1])
-            self.ol_axes.set_xlim(0, size[0])
-            self.ol_axes.margins(0)
-            self.ol_fig.set_size_inches((0.0 + size[1])/self.ol_fig.get_dpi(), (0.0 + size[0])/self.ol_fig.get_dpi())
-            # fetch the shape of the figure
-            shape = (int(self.ol_fig.bbox.bounds[3]), int(self.ol_fig.bbox.bounds[2]), -1)
-            # write the plot to a buffer
-            io_buf = io.BytesIO()
-            self.ol_fig.savefig(io_buf, format='raw', dpi=self.ol_fig.get_dpi())
-            io_buf.seek(0)
-            # convert the bytes in the buffer to a numpy array and reshape it
-            self.overlay_original = np.reshape(np.frombuffer(io_buf.getvalue(), dtype=np.uint8), shape)
-            # don't forget to close the buffer
-            io_buf.close()
+            if self.overlay_update:
+                # clear the previous plot
+                self.ol_axes.clear()
+                # plot the data
+                x, y, z = overlay.get_rib(1000, 2)
+                x, y = self.rescale(x, y)
+                self.ol_axes.plot(x, y)
+                # get the size
+                size = self.original.shape
+                # reset the positioning
+                self.ol_axes.patch.set_alpha(0)
+                self.ol_axes.set_position([0, 0, 1, 1])
+                self.ol_axes.set_xlim(0, size[1])
+                self.ol_axes.set_xlim(0, size[0])
+                self.ol_axes.margins(0)
+                self.ol_fig.set_size_inches((0.0 + size[1])/self.ol_fig.get_dpi(), (0.0 + size[0])/self.ol_fig.get_dpi())
+                # fetch the shape of the figure
+                shape = (int(self.ol_fig.bbox.bounds[3]), int(self.ol_fig.bbox.bounds[2]), -1)
+                # write the plot to a buffer
+                io_buf = io.BytesIO()
+                self.ol_fig.savefig(io_buf, format='raw', dpi=self.ol_fig.get_dpi())
+                io_buf.seek(0)
+                # convert the bytes in the buffer to a numpy array and reshape it
+                self.overlay_original = np.reshape(np.frombuffer(io_buf.getvalue(), dtype=np.uint8), shape)
+                # don't forget to close the buffer
+                io_buf.close()
+                # mark the update as done
+                self.overlay_update = False
             # adjust for zooming and panning
             self.overlay_image = self.adjust_for_zoom_and_pan(self.overlay_original)
             # convert to a tkinter friendly image
