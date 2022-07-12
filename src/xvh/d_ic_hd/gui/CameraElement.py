@@ -33,7 +33,7 @@ class CameraElement:
         frm_cvs.rowconfigure(0, weight=1, minsize=300)
 
         # Create the camera frame
-        self.camera_frame = CameraFrame(tk, master=frm_cvs, camera=self.cameras.get_camera(camera), name=self.name, logger=logger)
+        self.camera_frame = CameraFrame(tk, self, master=frm_cvs, camera=self.cameras.get_camera(camera), name=self.name, logger=logger)
         self.camera_frame.grid(row=0, column=0, sticky=(tk.N, tk.W, tk.S, tk.E))
         # Create the scroll bars
         self.scroll_x = tk.Scrollbar(master=frm_cvs, orient=tk.HORIZONTAL, command=self.scrolled_x)
@@ -173,6 +173,10 @@ class CameraElement:
             # if scroll position has changed, update the vertical pan
             self.camera_frame.set_pan_x(full_range*self.scroll_y.get()[0])
 
+    def update_scroll_bars(self):
+        self.scrolled_x("scroll", 0)
+        self.scrolled_y("scroll", 0)
+
     # called when the image is zoomed
     def zoom(self, type, value, unit=""):
         # check if the camera is valid
@@ -186,8 +190,7 @@ class CameraElement:
             # if scroll position has changed, update the image zoom
             self.camera_frame.set_zoom_index(len(CameraFrame.ZOOM_VALUES) * self.scroll_zoom.get()[0])
             # also update the scroll bars
-            self.scrolled_x("scroll", 0)
-            self.scrolled_y("scroll", 0)
+            self.update_scroll_bars()
             # and the scroll value
             self.zoom_value.set(str(self.camera_frame.scale) + 'x')
 

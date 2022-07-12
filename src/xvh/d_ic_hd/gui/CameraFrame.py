@@ -15,8 +15,10 @@ class CameraFrame(Frame):
     MAX_ZOOM = max(ZOOM_VALUES)
     MIN_ZOOM = min(ZOOM_VALUES)
 
-    def __init__(self, tk, master, name, camera, logger, *pargs):
+    def __init__(self, tk, element, master, name, camera, logger, *pargs):
         Frame.__init__(self, master, *pargs)
+        # set the element
+        self.element = element
         # set the name
         self.name = name
         # set the camera
@@ -45,6 +47,7 @@ class CameraFrame(Frame):
         self.original = self.camera.grab_picture()
         self.image = Image.fromarray(self.original).resize((self.w, self.h))
         self.background_image = ImageTk.PhotoImage(self.image)
+        self.ar_p = (0.0 + self.image_width()) / (0.0 + self.image_height())
         # prevent pack propagation
         self.pack_propagate(False)
         # create the canvas for the background
@@ -100,11 +103,13 @@ class CameraFrame(Frame):
                 self.scale_x = 1
                 self.scale_y = 1
             elif self.ar_w < self.ar_p:
-                self.scale_x = self.ar_p / self.ar_w
-                self.scale_y = 1
-            else:
                 self.scale_x = 1
-                self.scale_y = self.ar_w / self.ar_p
+                self.scale_y = self.ar_p / self.ar_w
+            else:
+                self.scale_x = self.ar_w / self.ar_p
+                self.scale_y = 1
+            # update the pan bounds
+            self.calculate_pan_bounds()
             # reset the background
             self.reset_background()
 
@@ -141,6 +146,7 @@ class CameraFrame(Frame):
     def calculate_pan_bounds(self):
         self.max_dx = self.image_width() - int(self.zoom_width())
         self.max_dy = self.image_height() - int(self.zoom_height())
+        self.element.update_scroll_bars()
 
     def set_pan_x(self, dx):
         self.set_pan(dx, self.dy)
