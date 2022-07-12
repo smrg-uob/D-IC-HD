@@ -1,3 +1,4 @@
+# coding=utf-8
 from CameraFrame import CameraFrame
 import re
 import tkFileDialog
@@ -14,11 +15,15 @@ class CameraElement:
         self.logger = logger
         # Set the name
         self.name = name
+        # Set the camera index
+        self.camera_index = camera
         # Set the cameras
         self.cameras = cameras
         # Create a frame for this camera
         self.frm_main = tk.Frame(master=self.parent, relief=tk.GROOVE, borderwidth=3)
         self.frm_main.pack(fill=tk.BOTH, side=tk.LEFT, expand=True)
+        # Initialize calibration field
+        self.calibration = None
         # Prevent the frame from resetting its size
         self.frm_main.pack_propagate(False)
         # Fetch default font properties
@@ -40,6 +45,7 @@ class CameraElement:
         # Create the camera frame
         self.camera_frame = CameraFrame(tk, self, master=frm_cvs, camera=self.cameras.get_camera(camera), name=self.name, logger=logger)
         self.camera_frame.grid(row=0, column=0, sticky=(tk.N, tk.W, tk.S, tk.E))
+
         # Create the scroll bars
         self.scroll_x = tk.Scrollbar(master=frm_cvs, orient=tk.HORIZONTAL, command=self.scrolled_x)
         self.scroll_y = tk.Scrollbar(master=frm_cvs, orient=tk.VERTICAL, command=self.scrolled_y)
@@ -53,6 +59,7 @@ class CameraElement:
         self.frm_controls.pack(fill=tk.X, side=tk.TOP, expand=False)
         for col in range(0, 120):
             self.frm_controls.grid_columnconfigure(col, weight=1)
+
         # add camera selection
         self.lbl_cameras = tk.Label(master=self.frm_controls, text="Camera")
         self.camera_value = tk.StringVar()
@@ -62,6 +69,7 @@ class CameraElement:
         self.cbx_cameras["values"] = self.cameras.get_names()
         self.lbl_cameras.grid(row=0, column=1, columnspan=3, sticky=tk.W, padx=3, pady=1)
         self.cbx_cameras.grid(row=0, column=4, columnspan=15, sticky=(tk.W, tk.E), pady=1)
+
         # add capture controls
         self.lbl_capture = tk.Label(master=self.frm_controls, text="Capture")
         self.img_icon = ImageTk.PhotoImage(Image.open("resources/camera.gif"))
@@ -72,6 +80,7 @@ class CameraElement:
         self.lbl_capture.grid(row=1, column=1, columnspan=3, sticky=tk.W, padx=3, pady=1)
         self.btn_image.grid(row=1, column=4, pady=1, sticky=tk.W)
         self.btn_save.grid(row=1, column=5, pady=1, sticky=tk.W)
+
         # add zoom control
         self.lbl_zoom = tk.Label(master=self.frm_controls, text="Digital Zoom")
         self.scroll_zoom = tk.Scrollbar(master=self.frm_controls, orient=tk.HORIZONTAL, command=self.zoom)
@@ -82,6 +91,7 @@ class CameraElement:
         self.lbl_zoom.grid(row=2, column=1, columnspan=3, sticky=tk.W, padx=3, pady=1)
         self.scroll_zoom.grid(row=2, column=4, columnspan=15, sticky=(tk.W, tk.E), pady=1)
         self.lbl_zoom_value.grid(row=2, column=19, columnspan=1, pady=1)
+
         # add exposure control
         self.lbl_exposure = tk.Label(master=self.frm_controls, text="Exposure")
         self.scroll_exposure = tk.Scrollbar(master=self.frm_controls, orient=tk.HORIZONTAL, command=self.exposure_scroll)
@@ -94,7 +104,8 @@ class CameraElement:
         self.lbl_exposure.grid(row=3, column=1, columnspan=3, sticky=tk.W, padx=3, pady=1)
         self.scroll_exposure.grid(row=3, column=4, columnspan=15, sticky=(tk.W, tk.E), pady=1)
         self.ety_exposure.grid(row=3, column=19, columnspan=1, pady=1)
-        # add overlay toggle
+
+        # add overlay controls
         self.lbl_overlay = tk.Label(master=self.frm_controls, text="Overlay")
         self.overlay_value = tk.StringVar()
         self.overlay_value.set("Enable")
@@ -119,6 +130,75 @@ class CameraElement:
         self.lbl_dy.grid(row=4, column=15, columnspan=1, sticky=(tk.W, tk.E), pady=1)
         self.ety_dy.grid(row=4, column=16, columnspan=3, sticky=(tk.W, tk.E), pady=1)
         self.btn_flip.grid(row=4, column=19, sticky=tk.W, pady=1, padx=10)
+
+        # add calibration values
+        col = 30
+        w_lbl = 1
+        span = 3
+        self.lbl_calibration = tk.Label(master=self.frm_controls, text="Calibration")
+        self.lbl_calibration.grid(row=0, column=col, columnspan=3, sticky=tk.W, pady=1)
+        self.lbl_cal_theta_x = self.create_calibration_label(tk, "θ", "x", 1, col)
+        self.lbl_cal_theta_y = self.create_calibration_label(tk, "θ", "y", 1, col + w_lbl + span)
+        self.lbl_cal_theta_z = self.create_calibration_label(tk, "θ", "z", 1, col + 2*(w_lbl + span))
+        self.lbl_cal_c_x = self.create_calibration_label(tk, "c", "x", 2, col)
+        self.lbl_cal_c_y = self.create_calibration_label(tk, "c", "y", 2, col + w_lbl + span)
+        self.lbl_cal_c_z = self.create_calibration_label(tk, "c", "z", 2, col + 2*(w_lbl + span))
+        self.lbl_cal_d_x = self.create_calibration_label(tk, "d", "x", 3, col)
+        self.lbl_cal_d_y = self.create_calibration_label(tk, "d", "y", 3, col + w_lbl + span)
+        self.lbl_cal_d_z = self.create_calibration_label(tk, "d", "z", 3, col + 2*(w_lbl + span))
+        self.lbl_cal_e_x = self.create_calibration_label(tk, "e", "x", 4, col)
+        self.lbl_cal_e_y = self.create_calibration_label(tk, "e", "y", 4, col + w_lbl + span)
+        self.lbl_cal_e_z = self.create_calibration_label(tk, "e", "z", 4, col + 2*(w_lbl + span))
+        self.cal_theta_x_value = tk.StringVar()
+        self.cal_theta_y_value = tk.StringVar()
+        self.cal_theta_z_value = tk.StringVar()
+        self.cal_c_x_value = tk.StringVar()
+        self.cal_c_y_value = tk.StringVar()
+        self.cal_c_z_value = tk.StringVar()
+        self.cal_d_x_value = tk.StringVar()
+        self.cal_d_y_value = tk.StringVar()
+        self.cal_d_z_value = tk.StringVar()
+        self.cal_e_x_value = tk.StringVar()
+        self.cal_e_y_value = tk.StringVar()
+        self.cal_e_z_value = tk.StringVar()
+        self.ety_cal_theta_x = tk.Entry(master=self.frm_controls, width=3, textvariable=self.cal_theta_x_value)
+        self.ety_cal_theta_y = tk.Entry(master=self.frm_controls, width=3, textvariable=self.cal_theta_y_value)
+        self.ety_cal_theta_z = tk.Entry(master=self.frm_controls, width=3, textvariable=self.cal_theta_z_value)
+        self.ety_cal_c_x = tk.Entry(master=self.frm_controls, width=3, textvariable=self.cal_c_x_value)
+        self.ety_cal_c_y = tk.Entry(master=self.frm_controls, width=3, textvariable=self.cal_c_y_value)
+        self.ety_cal_c_z = tk.Entry(master=self.frm_controls, width=3, textvariable=self.cal_c_z_value)
+        self.ety_cal_d_x = tk.Entry(master=self.frm_controls, width=3, textvariable=self.cal_d_x_value)
+        self.ety_cal_d_y = tk.Entry(master=self.frm_controls, width=3, textvariable=self.cal_d_y_value)
+        self.ety_cal_d_z = tk.Entry(master=self.frm_controls, width=3, textvariable=self.cal_d_z_value)
+        self.ety_cal_e_x = tk.Entry(master=self.frm_controls, width=3, textvariable=self.cal_e_x_value)
+        self.ety_cal_e_y = tk.Entry(master=self.frm_controls, width=3, textvariable=self.cal_e_y_value)
+        self.ety_cal_e_z = tk.Entry(master=self.frm_controls, width=3, textvariable=self.cal_e_z_value)
+        self.ety_cal_theta_x.grid(row=1, column=col + w_lbl, columnspan=span, sticky=tk.W, pady=1)
+        self.ety_cal_theta_y.grid(row=1, column=col + 2*w_lbl + span, columnspan=span, sticky=tk.W, pady=1)
+        self.ety_cal_theta_z.grid(row=1, column=col + 3*w_lbl + 2*span, columnspan=span, sticky=tk.W, pady=1)
+        self.ety_cal_c_x.grid(row=2, column=col + w_lbl, columnspan=span, sticky=tk.W, pady=1)
+        self.ety_cal_c_y.grid(row=2, column=col + 2*w_lbl + span, columnspan=span, sticky=tk.W, pady=1)
+        self.ety_cal_c_z.grid(row=2, column=col + 3*w_lbl + 2*span, columnspan=span, sticky=tk.W, pady=1)
+        self.ety_cal_d_x.grid(row=3, column=col + w_lbl, columnspan=span, sticky=tk.W, pady=1)
+        self.ety_cal_d_y.grid(row=3, column=col + 2*w_lbl + span, columnspan=span, sticky=tk.W, pady=1)
+        self.ety_cal_d_z.grid(row=3, column=col + 3*w_lbl + 2*span, columnspan=span, sticky=tk.W, pady=1)
+        self.ety_cal_e_x.grid(row=4, column=col + w_lbl, columnspan=span, sticky=tk.W, pady=1)
+        self.ety_cal_e_y.grid(row=4, column=col + 2*w_lbl + span, columnspan=span, sticky=tk.W, pady=1)
+        self.ety_cal_e_z.grid(row=4, column=col + 3*w_lbl + 2*span, columnspan=span, sticky=tk.W, pady=1)
+        self.calibration_fields = []
+        self.calibration_fields.append(self.ety_cal_theta_x)
+        self.calibration_fields.append(self.ety_cal_theta_y)
+        self.calibration_fields.append(self.ety_cal_theta_z)
+        self.calibration_fields.append(self.ety_cal_c_x)
+        self.calibration_fields.append(self.ety_cal_c_y)
+        self.calibration_fields.append(self.ety_cal_c_z)
+        self.calibration_fields.append(self.ety_cal_d_x)
+        self.calibration_fields.append(self.ety_cal_d_y)
+        self.calibration_fields.append(self.ety_cal_d_z)
+        self.calibration_fields.append(self.ety_cal_e_x)
+        self.calibration_fields.append(self.ety_cal_e_y)
+        self.calibration_fields.append(self.ety_cal_e_z)
+        self.disable_calibration_fields()
         # set widget states based on camera status
         self.update_widget_states()
 
@@ -299,6 +379,52 @@ class CameraElement:
 
     def update_projection(self, projection):
         self.camera_frame.set_projection(projection)
+
+    def load_calibration(self, calibration):
+        if self.camera_index == 0:
+            theta = calibration.theta_1
+            c = calibration.c_1
+            d = calibration.d_1
+            e = calibration.e_1
+        elif self.camera_index == 1:
+            theta = calibration.theta_2
+            c = calibration.c_2
+            d = calibration.d_2
+            e = calibration.e_2
+        else:
+            return
+        self.calibration = calibration
+        self.enable_calibration_fields()
+        self.cal_theta_x_value.set(str(theta[0]))
+        self.cal_theta_y_value.set(str(theta[1]))
+        self.cal_theta_z_value.set(str(theta[2]))
+        self.cal_c_x_value.set(str(c[0]))
+        self.cal_c_y_value.set(str(c[1]))
+        self.cal_c_z_value.set(str(c[2]))
+        self.cal_d_x_value.set(str(d[0]))
+        self.cal_d_y_value.set(str(d[1]))
+        self.cal_d_z_value.set(str(d[2]))
+        self.cal_e_x_value.set(str(e[0]))
+        self.cal_e_y_value.set(str(e[1]))
+        self.cal_e_z_value.set(str(e[2]))
+        self.disable_calibration_fields()
+
+    def create_calibration_label(self, tk, text, subscript, row, column):
+        parent = self.frm_controls
+        txt = tk.Text(master=parent, width=4, height=1, borderwidth=0, background=parent.cget("background"))
+        txt.tag_configure("subscript", offset=-2)
+        txt.insert("insert", text, "", subscript, "subscript")
+        txt.configure(state="disabled")
+        txt.grid(row=row, column=column, sticky=tk.E, pady=1)
+        return text
+
+    def disable_calibration_fields(self):
+        for field in self.calibration_fields:
+            field.configure(state="disabled")
+
+    def enable_calibration_fields(self):
+        for field in self.calibration_fields:
+            field.configure(state="normal")
 
     def log(self, line):
         self.logger(self.name + ": " + line)
