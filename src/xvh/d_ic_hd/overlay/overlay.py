@@ -6,6 +6,23 @@ p = 2.77
 h_r = 0.37
 
 
+def get_overlay():
+    x, y, z = get_rib(1000)
+    x1 = x - p/2.0
+    x2 = x + p/2.0
+    return np.concatenate((x1, x2)), np.concatenate((y, y)), np.concatenate((z, z))
+
+
+def get_rib_1():
+    x, y, z = get_rib(1000)
+    return x - p/2.0, y, z
+
+
+def get_rib_2():
+    x, y, z = get_rib(1000)
+    return x + p/2.0, y, z
+
+
 def get_rib(points):
     # Create x, y and z arrays for the ribs
     t = np.arange(-0.5, 0.5, 1.0/points)

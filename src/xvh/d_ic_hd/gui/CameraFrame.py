@@ -242,9 +242,10 @@ class CameraFrame(Frame):
                 # clear the previous plot
                 self.ol_axes.clear()
                 # plot the data
-                x, y, z = overlay.get_rib(1000)
-                x, y = self.rescale_overlay(x, y)
-                self.ol_axes.plot(x, y)
+                x, y, z = overlay.get_rib_1()
+                self.plot_data(x, y, "blue")
+                x, y, z = overlay.get_rib_2()
+                self.plot_data(x, y, "blue")
                 # get the size
                 size = self.original.shape
                 # reset the positioning
@@ -270,6 +271,10 @@ class CameraFrame(Frame):
             self.overlay_image = self.adjust_for_zoom_and_pan(self.overlay_original)
             # convert to a tkinter friendly image
             self.overlay = ImageTk.PhotoImage(self.overlay_image)
+
+    def plot_data(self, x, y, colour):
+        x, y = self.rescale_overlay(x, y)
+        self.ol_axes.plot(x, y, color=colour)
 
     def rescale_overlay(self, x, y):
         # fetch field of view values
