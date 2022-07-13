@@ -60,13 +60,8 @@ class CameraFrame(Frame):
         self.pack_propagate(False)
         # create the canvas for the background
         self.canvas = tk.Canvas(master=self, width=self.w, height=self.h)
-        # create the figure and axes for the overlay
-        dpi = 200
-        self.ol_fig = plt.figure(figsize=(self.w / dpi, self.h / dpi), dpi=dpi)
-        self.ol_fig.patch.set_alpha(0)
-        self.ol_axes = self.ol_fig.add_subplot(111)
-        self.ol_axes.axis('off')
-        self.ol_axes.patch.set_alpha(0)
+        # initialize the overlay properties
+        self.dpi = 200
         self.overlay_update = True
         self.do_overlay = False
         self.overlay_original = None
@@ -245,31 +240,34 @@ class CameraFrame(Frame):
         # - for the second approach, it is not easily feasible to make the overlay canvas background transparent
         if self.do_overlay:
             if self.overlay_update:
-                # clear the previous plot
-                self.ol_axes.clear()
+                # plot a new overlay
+                fig = plt.figure(figsize=(self.w / self.dpi, self.h / self.dpi), dpi=self.dpi)
+                ax = fig.add_subplot(111)
+                ax.axis('off')
                 # plot the data
                 x, y, z = overlay.get_rib_1()
-                self.plot_data(x, y, z, "blue")
+                self.plot_data(ax, x, y, z, "blue")
                 x, y, z = overlay.get_rib_2()
-                self.plot_data(x, y, z, "blue")
+                self.plot_data(ax, x, y, z, "blue")
                 x, y, z = overlay.get_drill_1()
-                self.plot_data(x, y, z, "red")
+                self.plot_data(ax, x, y, z, "red")
                 x, y, z = overlay.get_drill_2()
-                self.plot_data(x, y, z, "red")
+                self.plot_data(ax, x, y, z, "red")
                 # get the size
                 size = self.original.shape
-                # reset the positioning
-                self.ol_axes.patch.set_alpha(0)
-                self.ol_axes.set_position([0, 0, 1, 1])
-                self.ol_axes.set_xlim(-size[1]/2.0, size[1]/2.0)
-                self.ol_axes.set_ylim(-size[0]/2.0, size[0]/2.0)
-                self.ol_axes.margins(0)
-                self.ol_fig.set_size_inches((0.0 + size[1])/self.ol_fig.get_dpi(), (0.0 + size[0])/self.ol_fig.get_dpi())
+                # configure the layout and positioning
+                fig.patch.set_alpha(0)
+                ax.patch.set_alpha(0)
+                ax.set_position([0, 0, 1, 1])
+                ax.set_xlim(-size[1]/2.0, size[1]/2.0)
+                ax.set_ylim(-size[0]/2.0, size[0]/2.0)
+                ax.margins(0)
+                fig.set_size_inches((0.0 + size[1])/fig.get_dpi(), (0.0 + size[0])/fig.get_dpi())
                 # fetch the shape of the figure
-                shape = (int(self.ol_fig.bbox.bounds[3]), int(self.ol_fig.bbox.bounds[2]), -1)
+                shape = (int(fig.bbox.bounds[3]), int(fig.bbox.bounds[2]), -1)
                 # write the plot to a buffer
                 io_buf = io.BytesIO()
-                self.ol_fig.savefig(io_buf, format='raw', dpi=self.ol_fig.get_dpi())
+                fig.savefig(io_buf, format='raw', dpi=fig.get_dpi())
                 io_buf.seek(0)
                 # convert the bytes in the buffer to a numpy array and reshape it
                 self.overlay_original = np.reshape(np.frombuffer(io_buf.getvalue(), dtype=np.uint8), shape)
@@ -282,9 +280,9 @@ class CameraFrame(Frame):
             # convert to a tkinter friendly image
             self.overlay = ImageTk.PhotoImage(self.overlay_image)
 
-    def plot_data(self, x, y, z, colour):
+    def plot_data(self, ax, x, y, z, colour):
         x, y = self.rescale_overlay(x, y, z)
-        self.ol_axes.plot(x, y, color=colour)
+        ax.plot(x, y, color=colour)
 
     def rescale_overlay(self, x, y, z):
         # fetch field of view values
