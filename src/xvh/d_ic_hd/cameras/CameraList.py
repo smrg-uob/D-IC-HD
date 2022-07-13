@@ -8,10 +8,13 @@ class CameraList:
     def scan_cameras(self):
         self.cameras = []
         self.names = []
+        # add all available cameras
         for camera in BaslerCamera.available_cameras(self.logger):
             self.cameras.append(camera)
-            self.names.append(camera.get_name())
         self.cameras.append(TestCamera(self.logger))
+        # cache the camera names
+        for camera in self.cameras:
+            self.names.append(camera.get_name())
         return self
 
     def camera_count(self):
