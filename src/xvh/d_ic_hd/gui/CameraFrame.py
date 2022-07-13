@@ -3,7 +3,6 @@ from Tkinter import SE
 from PIL import Image, ImageTk
 from PIL.PngImagePlugin import PngInfo
 import numpy as np
-import matplotlib.pyplot as plt
 from xvh.d_ic_hd.overlay import overlay
 import io
 
@@ -240,6 +239,8 @@ class CameraFrame(Frame):
         # - for the second approach, it is not easily feasible to make the overlay canvas background transparent
         if self.do_overlay:
             if self.overlay_update:
+                # import pyplot (do not import it at the top of the file as it would force the 'tkAgg' backend)
+                import matplotlib.pyplot as plt
                 # plot a new overlay
                 fig = plt.figure(figsize=(self.w / self.dpi, self.h / self.dpi), dpi=self.dpi)
                 ax = fig.add_subplot(111)
@@ -271,8 +272,9 @@ class CameraFrame(Frame):
                 io_buf.seek(0)
                 # convert the bytes in the buffer to a numpy array and reshape it
                 self.overlay_original = np.reshape(np.frombuffer(io_buf.getvalue(), dtype=np.uint8), shape)
-                # don't forget to close the buffer
+                # don't forget to close the buffer and the figure
                 io_buf.close()
+                plt.close(fig)
                 # mark the update as done
                 self.overlay_update = False
             # adjust for zooming and panning
