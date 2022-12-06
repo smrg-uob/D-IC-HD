@@ -221,19 +221,15 @@ class CameraElement:
     # updates the save button state
     def update_widget_states(self):
         if self.camera_frame.is_valid_camera():
-            self.btn_image.configure(state="normal")
-            self.btn_save.configure(state="normal")
-            self.ety_exposure.configure(state="normal")
-            self.btn_overlay.configure(state="normal")
-            self.ety_dx.configure(state="normal")
-            self.ety_dy.configure(state="normal")
+            state = "normal"
         else:
-            self.btn_image.configure(state="disabled")
-            self.btn_save.configure(state="disabled")
-            self.ety_exposure.configure(state="disabled")
-            self.btn_overlay.configure(state="disabled")
-            self.ety_dx.configure(state="disabled")
-            self.ety_dy.configure(state="disabled")
+            state = "disabled"
+        self.btn_image.configure(state=state)
+        self.btn_save.configure(state=state)
+        self.ety_exposure.configure(state=state)
+        self.btn_overlay.configure(state=state)
+        self.ety_dx.configure(state=state)
+        self.ety_dy.configure(state=state)
 
     # called when the image button is pressed
     def button_image_pressed(self):
