@@ -53,9 +53,16 @@ class Gui:
         # Create the control element
         self.controls = ControlElement(tk, self.frm_input, (self.camera_1, self.camera_2), self.log)
 
+        # Closing protocol
+        self.gui.protocol('WM_DELETE_WINDOW', self.__on_close)
+
     def launch_gui(self):
         self.log("DI-C-HD Launched Successfully")
         self.gui.mainloop()
+
+    def __on_close(self):
+        self.controls.on_close()
+        self.gui.destroy()
 
     def log(self, line):
         # enable the text box

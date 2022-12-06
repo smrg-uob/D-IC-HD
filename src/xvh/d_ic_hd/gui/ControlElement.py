@@ -104,6 +104,9 @@ class ControlElement:
     def log(self, line):
         self.logger(line)
 
+    def on_close(self):
+        self.drill_control.on_close()
+
     @staticmethod
     def validate_magnification(val):
         if len(val) == 0:
