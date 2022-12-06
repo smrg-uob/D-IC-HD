@@ -1,4 +1,5 @@
 # coding=utf-8
+
 import Tkinter as Tk
 import ttk
 import tkFont
@@ -15,20 +16,19 @@ class DrillControlElement:
         self.logger = logger
         # motor controller
         self.mc = None
-        # command flag
-        self.command_flag = False
         # movement properties
         self.lead = 0
         self.steps_for_rev = 0
         self.steps_for_inc = 0
         self.move_type_index = 0
+        self.forwards = True
         # position trackers
         self.step_position = 0
         self.position = 0.000
         # Title
-        self.lbl_drill_control = tk.Label(master=self.parent, text='Drill Depth Control',
-                                          font=(title_font_type, title_font_size))
-        self.lbl_drill_control.grid(row=0, column=0, sticky="w", pady=2)
+        self.lbl_position_control = tk.Label(master=self.parent, text='Drill Position Control',
+                                             font=(title_font_type, title_font_size))
+        self.lbl_position_control.grid(row=0, column=0, sticky="w", pady=2)
         # Add controls frame
         self.frm_controls = tk.Frame(master=self.parent)
         self.frm_controls.grid(row=1, column=0, sticky="nesw",)
@@ -181,6 +181,49 @@ class DrillControlElement:
             # stop looping,
             return
 
+    def motor_step_loop(self):
+        if self.mc is None:
+            # No motor connection, update the status
+            self.set_connection_status('Disconnected')
+            # toggle the widgets
+            self.toggle_connection_widgets(True)
+            self.toggle_control_widgets(False)
+            # log
+            self.log('Disconnected from motor, cancelling steps')
+            # stop looping
+            return
+        if self.mc.is_valid():
+            if self.mc.is_stepping():
+                # The motor is still stepping, loop
+                self.parent.after(1, self.motor_step_loop)
+                return
+            else:
+                # the motor has finished stepping, update the step counter and position
+                steps = self.mc.get_last_step_count()
+                self.log('Finished stepping ' + str(steps) + ' steps')
+                if self.forwards:
+                    self.step_position = self.step_position + steps
+                else:
+                    self.step_position = self.step_position - steps
+                self.position = (self.step_position*self.lead)/self.steps_for_rev
+                self.update_position_fields()
+                # toggle the widgets
+                self.toggle_control_widgets(True)
+                # stop looping
+                return
+        else:
+            # motor connection timed out, update the status
+            self.set_connection_status('Disconnected')
+            # reset the motor
+            self.mc = None
+            # toggle the widgets
+            self.toggle_connection_widgets(True)
+            self.toggle_control_widgets(False)
+            # log
+            self.log('Motor timed out, cancelling steps')
+            # stop looping,
+            return
+
     def com_port_selected(self, event=None):
         # No operations needed
         pass
@@ -235,8 +278,6 @@ class DrillControlElement:
         self.mc.start_connection()
         # Update the status
         self.set_connection_status('Connecting')
-        # set the command flag
-        self.command_flag = True
         # disable the control widgets
         self.toggle_connection_widgets(False)
         # Launch event loop
@@ -250,19 +291,48 @@ class DrillControlElement:
         self.update_position_fields()
 
     def move_relative(self):
-        pass    # TODO
+        move_type = self.move_type_index
+        move_value = self.get_movement_value()
+        if move_type == 0:
+            # movement requested in millimeters: convert to steps
+            self.step_relative(int((move_value*self.steps_for_rev)/self.lead))
+        else:
+            # movement requested in steps: simply forward
+            self.step_relative(move_value)
 
     def move_absolute(self):
-        pass    # TODO
+        move_type = self.move_type_index
+        move_value = self.get_movement_value()
+        if move_type == 0:
+            # movement requested in millimeters: convert to steps
+            self.step_absolute(int((move_value*self.steps_for_rev)/self.lead))
+        else:
+            # movement requested in steps: simply forward
+            self.step_absolute(move_value)
 
-    def step_relative(self):
-        pass    # TODO
+    def step_relative(self, steps):
+        # if zero steps are requested, do nothing
+        if steps == 0:
+            return
+        # if there is no active motor, do nothing
+        if self.mc is None or not self.mc.is_valid:
+            self.log('Not connected to a motor, can not step')
+        # set forwards flag
+        self.forwards = steps > 0
+        # perform the steps
+        self.mc.do_steps(steps)
+        # disable the control widgets
+        self.toggle_control_widgets(False)
+        # Launch event loop
+        self.parent.after(1, self.motor_step_loop)
 
-    def step_absolute(self):
-        pass    # TODO
+    def step_absolute(self, steps):
+        # calculate the relative movement and forward
+        self.step_relative(steps - self.step_position)
 
     def stop(self):
-        pass    # TODO
+        if self.mc is not None and self.mc.is_stepping():
+            self.mc.stop_stepping()
 
     def get_com_port(self):
         if len(self.port_names) <= 0:
@@ -373,7 +443,6 @@ class DrillControlElement:
         self.cbx_move_type.configure(state=state)
         self.btn_move_rel.configure(state=state)
         self.btn_move_abs.configure(state=state)
-        self.btn_move_stop.configure(state=state)
 
     def validate_movement_input(self, val):
         if self.move_type_index == 0:
