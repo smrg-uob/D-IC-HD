@@ -319,6 +319,10 @@ class DrillControlElement:
             self.log('Not connected to a motor, can not step')
         # set forwards flag
         self.forwards = steps > 0
+        # check the step limit
+        if steps > 32767:
+            self.log('Can not step more than 32 767 steps at a time, limiting steps to 32 767')
+            steps = 32767
         # perform the steps
         self.mc.do_steps(steps)
         # disable the control widgets
@@ -455,6 +459,7 @@ class DrillControlElement:
 
     def on_close(self):
         if self.mc is not None:
+            self.mc.stop_stepping()
             self.mc.stop_connection()
             self.mc = None
 
