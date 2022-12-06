@@ -1,10 +1,10 @@
 # coding=utf-8
 from CameraFrame import CameraFrame
-import re
 import tkFileDialog
 import tkFont
 import ttk
 from PIL import Image, ImageTk
+from xvh.d_ic_hd.util import input_validation
 
 
 class CameraElement:
@@ -95,7 +95,7 @@ class CameraElement:
         # add exposure control
         self.lbl_exposure = tk.Label(master=self.frm_controls, text="Exposure")
         self.scroll_exposure = tk.Scrollbar(master=self.frm_controls, orient=tk.HORIZONTAL, command=self.exposure_scroll)
-        exposure_validation = (self.frm_controls.register(CameraElement.validate_exposure), '%P')
+        exposure_validation = (self.frm_controls.register(input_validation.validate_exposure), '%P')
         self.exposure_value = tk.StringVar()
         self.exposure_value.set(str(self.camera_frame.get_exposure()))
         self.exposure_value.trace_variable("w", self.exposure_write)
@@ -111,7 +111,7 @@ class CameraElement:
         self.overlay_value.set("Enable")
         self.btn_overlay = tk.Button(master=self.frm_controls, textvariable=self.overlay_value, command=self.button_overlay_pressed)
         self.lbl_dx = tk.Label(master=self.frm_controls, text="dx")
-        float_validation = (self.frm_controls.register(CameraElement.validate_float), '%P')
+        float_validation = (self.frm_controls.register(input_validation.validate_float), '%P')
         self.dx_value = tk.StringVar()
         self.dx_value.set(str(0.0))
         self.dx_value.trace_variable("w", self.dx_write)
@@ -424,22 +424,6 @@ class CameraElement:
 
     def log(self, line):
         self.logger(self.name + ": " + line)
-
-    @staticmethod
-    def validate_exposure(val):
-        if len(val) == 0:
-            return True
-        return re.match('^[0-9]*$', val) is not None
-
-    @staticmethod
-    def validate_float(val):
-        if len(val) == 0 or val == '-':
-            return True
-        try:
-            float(val)
-        except:
-            return False
-        return True
 
     @staticmethod
     def handle_scroll(scroll_bar, full_range, scroll_range, type, value, unit=""):

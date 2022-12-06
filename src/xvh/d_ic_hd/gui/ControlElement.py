@@ -1,5 +1,6 @@
 import tkFont
 from DrillControlElement import DrillControlElement
+from xvh.d_ic_hd.util import input_validation
 
 
 class ControlElement:
@@ -27,7 +28,7 @@ class ControlElement:
         self.lbl_optics = tk.Label(master=self.frm_optics, text='Optics', font=(font_type, font_size))
         self.lbl_optics.grid(row=0, column=0, sticky="w", pady=2)
         self.lbl_magnification = tk.Label(master=self.frm_optics, text="Magnification")
-        magnification_validation = (self.frm_optics.register(ControlElement.validate_magnification), '%P')
+        magnification_validation = (self.frm_optics.register(input_validation.validate_float_positive), '%P')
         self.magnification_value = tk.StringVar()
         self.magnification_value.set(str(2.4))
         self.magnification_value.trace_variable("w", self.magnification_write)
@@ -44,7 +45,7 @@ class ControlElement:
         self.lbl_objective.grid(row=2, column=0, sticky="w", padx=3, pady=1)
         self.ety_objective.grid(row=2, column=1, sticky="e", pady=1)
         self.lbl_projection = tk.Label(master=self.frm_optics, text="Projection")
-        projection_validation = (self.frm_optics.register(ControlElement.validate_projection), '%P')
+        projection_validation = (self.frm_optics.register(input_validation.validate_float), '%P')
         self.projection_value = tk.StringVar()
         self.projection_value.set(str(0.0))
         self.projection_value.trace_variable("w", self.projection_write)
@@ -106,23 +107,3 @@ class ControlElement:
 
     def on_close(self):
         self.drill_control.on_close()
-
-    @staticmethod
-    def validate_magnification(val):
-        if len(val) == 0:
-            return True
-        try:
-            nr = float(val)
-        except:
-            return False
-        return nr > 0
-
-    @staticmethod
-    def validate_projection(val):
-        if len(val) == 0 or val == '-':
-            return True
-        try:
-            float(val)
-        except:
-            return False
-        return True
