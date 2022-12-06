@@ -15,7 +15,7 @@ class Gui:
         self.gui.state('zoomed')
 
         # sub-frame dimensions
-        w_inputs = 300
+        w_inputs = 400
 
         # Create frames for the inputs and outputs
         self.frm_input = tk.Frame(master=self.gui, width=w_inputs, relief=tk.GROOVE, borderwidth=3)

@@ -1,7 +1,9 @@
 # coding=utf-8
 import Tkinter as Tk
 import ttk
+import tkFont
 from xvh.d_ic_hd.stepper_control import stepper_control as sc
+from xvh.d_ic_hd.util import input_validation
 
 
 class DrillControlElement:
@@ -15,7 +17,13 @@ class DrillControlElement:
         self.mc = None
         # command flag
         self.command_flag = False
-        # position tracker
+        # movement properties
+        self.lead = 0
+        self.steps_for_rev = 0
+        self.steps_for_inc = 0
+        self.move_type_index = 0
+        # position trackers
+        self.step_position = 0
         self.position = 0.000
         # Title
         self.lbl_drill_control = tk.Label(master=self.parent, text='Drill Depth Control',
@@ -24,20 +32,33 @@ class DrillControlElement:
         # Add controls frame
         self.frm_controls = tk.Frame(master=self.parent)
         self.frm_controls.grid(row=1, column=0, sticky="nesw",)
-        for col in range(0, 120):
-            self.frm_controls.grid_columnconfigure(col, weight=1)
-        col_1 = 1
-        span_1 = 9
-        col_2 = span_1 + col_1 + 4
+        # column configuration
+        row = 0
+        span_1 = 5
         span_2 = 8
+        span_3 = 3
+        span_4 = 3
+        span_5 = 4
+        span_full = span_1 + span_2 + span_3 + span_4 + span_5
+        col_1 = 0
+        col_2 = col_1 + span_1
+        col_3 = col_2 + span_2
+        col_4 = col_3 + span_3
+        col_5 = col_4 + span_4
+        for col in range(0, col_5 + span_5):
+            self.frm_controls.grid_columnconfigure(col, weight=1)
+        # define the title font
+        title_font = tkFont.Font(None, tkFont.nametofont("TkDefaultFont"))
+        title_font.configure(underline=True)
         # add status field
-        self.lbl_status = tk.Label(master=self.frm_controls, text="Status")
+        self.lbl_status = tk.Label(master=self.frm_controls, text="Status", font=title_font)
+
         self.txt_status = tk.Text(master=self.frm_controls, width=8, height=1)
         self.set_connection_status('Disconnected')
-        self.lbl_status.grid(row=0, column=col_1, columnspan=span_1, sticky=tk.W, padx=3, pady=1)
-        self.txt_status.grid(row=0, column=col_2, columnspan=span_2, sticky=(tk.W, tk.E), padx=3, pady=1)
+        self.lbl_status.grid(row=row, column=col_1, columnspan=span_full, sticky=tk.W, padx=3, pady=1)
+        self.txt_status.grid(row=row + 1, column=col_1, columnspan=span_full, sticky=(tk.W, tk.E), padx=3, pady=1)
+        row = row + 2
         # add com port selection box and connection button
-        self.lbl_com_ports = tk.Label(master=self.frm_controls, text="COM Port")
         ports, port_names = get_com_ports()
         self.port_names = port_names
         self.com_port_value = tk.StringVar()
@@ -49,29 +70,87 @@ class DrillControlElement:
         self.connect_value = tk.StringVar()
         self.connect_value.set("Connect")
         self.btn_connect = tk.Button(master=self.frm_controls, textvariable=self.connect_value, command=self.connect_button_pressed)
-        self.lbl_com_ports.grid(row=1, column=col_1, columnspan=span_1, sticky=tk.W, padx=3, pady=1)
-        self.cbx_com_ports.grid(row=1, column=col_2, columnspan=4, sticky=tk.W, padx=3, pady=1)
-        self.btn_connect.grid(row=1, column=col_2 + 4, columnspan=4, sticky=(tk.W, tk.E), padx=3, pady=1)
-        # Add controls label
-        self.lbl_controls = tk.Label(master=self.frm_controls, text="Controls")
-        self.lbl_controls.grid(row=2, column=col_1, columnspan=span_1, sticky=tk.W, padx=3, pady=1)
+        self.cbx_com_ports.grid(row=row, column=col_1, columnspan=span_1 + span_2 + span_3 + span_4, sticky=(tk.W, tk.E), padx=3, pady=1)
+        self.btn_connect.grid(row=row, column=col_5, columnspan=span_5, sticky=None, padx=3, pady=1)
+        row = row + 1
+        # Add configuration controls
+        self.lbl_configuration = tk.Label(master=self.frm_controls, text='Configuration', font=title_font)
+        self.lbl_drive = tk.Label(master=self.frm_controls, text='Drive')
+        self.lbl_lead = tk.Label(master=self.frm_controls, text='Lead')
+        self.lbl_steps_per_rev = tk.Label(master=self.frm_controls, text='Steps/Revolution')
+        self.lbl_mm_per_rev = tk.Label(master=self.frm_controls, text='mm/Revolution')
+        self.lbl_configuration.grid(row=row, column=col_1, columnspan=span_full, sticky=tk.W, padx=3, pady=1)
+
+        int_validation = (self.frm_controls.register(input_validation.validate_int_positive), '%P')
+        float_validation = (self.frm_controls.register(input_validation.validate_float_positive), '%P')
+        self.drive_value = tk.StringVar()
+        self.drive_value.set('%.0f' % 6000)
+        self.drive_value.trace_variable("w", self.update_movement_properties)
+        self.lead_value = tk.StringVar()
+        self.lead_value.set('%0.3f' % 2)
+        self.lead_value.trace_variable("w", self.update_movement_properties)
+        self.ety_drive = tk.Entry(master=self.frm_controls, width=3, textvariable=self.drive_value, validate='key', validatecommand=int_validation)
+        self.ety_lead = tk.Entry(master=self.frm_controls, width=3, textvariable=self.lead_value, validate='key', validatecommand=float_validation)
+        self.lbl_drive.grid(row=row + 1, column=col_1, columnspan=span_1 - 3, sticky=tk.W, padx=3, pady=1)
+        self.lbl_lead.grid(row=row + 2, column=col_1, columnspan=span_1 - 3, sticky=tk.W, padx=3, pady=1)
+        self.ety_drive.grid(row=row + 1, column=col_2 - 3, columnspan=span_2 + span_3, sticky=(tk.W, tk.E), padx=1, pady=1)
+        self.ety_lead.grid(row=row + 2, column=col_2 - 3, columnspan=span_2 + span_3, sticky=(tk.W, tk.E), padx=1, pady=1)
+        self.lbl_steps_per_rev.grid(row=row + 1, column=col_4, columnspan=span_4, sticky=tk.W, padx=1, pady=1)
+        self.lbl_mm_per_rev.grid(row=row + 2, column=col_4, columnspan=span_4, sticky=tk.W, padx=1, pady=1)
+        row = row + 3
         # Add depth indicator and zero button
-        self.lbl_position = tk.Label(master=self.frm_controls, text='Position')
+        self.lbl_position = tk.Label(master=self.frm_controls, text='Position', font=title_font)
         self.txt_position = tk.Text(master=self.frm_controls, width=8, height=1)
-        self.update_position_field()
+        self.txt_step_pos = tk.Text(master=self.frm_controls, width=8, height=1)
+        self.update_position_fields()
         self.zero_pos_value = tk.StringVar()
         self.zero_pos_value.set("Zero")
         self.btn_zero_pos = tk.Button(master=self.frm_controls, textvariable=self.zero_pos_value, command=self.zero_button_pressed)
-        self.lbl_position.grid(row=3, column=col_1, columnspan=span_1, sticky=tk.W, padx=3, pady=1)
-        self.txt_position.grid(row=3, column=col_2, columnspan=4, sticky=(tk.W, tk.E), padx=3, pady=1)
-        self.btn_zero_pos.grid(row=3, column=col_2 + 4, columnspan=4, sticky=(tk.W, tk.E), padx=3, pady=1)
+        self.lbl_position.grid(row=row, column=col_1, columnspan=span_1, sticky=tk.W, padx=3, pady=1)
+        self.txt_position.grid(row=row + 1, column=col_1, columnspan=span_1 + span_2 + span_3 + span_4, sticky=(tk.W, tk.E), padx=3, pady=1)
+        self.txt_step_pos.grid(row=row + 2, column=col_1, columnspan=span_1 + span_2 + span_3 + span_4, sticky=(tk.W, tk.E), padx=3, pady=1)
+        self.btn_zero_pos.grid(row=row + 1, column=col_5, rowspan=2, columnspan=span_5, sticky=(tk.N, tk.S, tk.W, tk.E), padx=3, pady=1)
+        row = row + 3
+        # Add movement controls
+        self.lbl_move = tk.Label(master=self.frm_controls, text="Movement", font=title_font)
+        self.cbx_move_type = None
+        move_validation = (self.frm_controls.register(self.validate_movement_input), '%P')
+        self.move_value = tk.StringVar()
+        self.move_value.set(('%.3f' % self.position))
+        self.ety_move = tk.Entry(master=self.frm_controls, width=3, textvariable=self.move_value, validate='key', validatecommand=move_validation)
+        self.move_type_value = tk.StringVar()
+        self.move_type_value.set('mm')
+        self.cbx_move_type = ttk.Combobox(master=self.frm_controls, state='readonly', width=span_5, textvariable=self.move_type_value)
+        self.cbx_move_type.bind("<<ComboboxSelected>>", self.move_type_selected)
+        self.cbx_move_type["values"] = ['mm', 'steps']
+        self.rel_value = tk.StringVar()
+        self.rel_value.set('Relative')
+        self.abs_value = tk.StringVar()
+        self.abs_value.set('Absolute')
+        self.stop_value = tk.StringVar()
+        self.stop_value.set('Stop')
+        self.btn_move_rel = tk.Button(master=self.frm_controls, textvariable=self.rel_value, width=span_full/3, command=self.move_relative)
+        self.btn_move_abs = tk.Button(master=self.frm_controls, textvariable=self.abs_value, width=span_full/3, command=self.move_absolute)
+        self.btn_move_stop = tk.Button(master=self.frm_controls, textvariable=self.stop_value, width=span_full/3, command=self.stop)
+        self.lbl_move.grid(row=row, column=col_1, columnspan=span_1, sticky=tk.W, padx=3, pady=1)
+        self.ety_move.grid(row=row + 1, column=col_1, columnspan=span_1 + span_2 + span_3 + span_4, sticky=(tk.W, tk.E), padx=3, pady=1)
+        self.cbx_move_type.grid(row=row + 1, column=col_5, columnspan=span_5, sticky=None, padx=3, pady=1)
+        self.btn_move_rel.grid(row=row + 2, column=col_1, columnspan=1, sticky=(tk.W, tk.E), padx=1, pady=1)
+        self.btn_move_abs.grid(row=row + 2, column=col_1 + span_full/3, columnspan=1, sticky=(tk.W, tk.E), padx=1, pady=1)
+        self.btn_move_stop.grid(row=row + 2, column=span_full - span_full/3, columnspan=1, sticky=(tk.W, tk.E), padx=3, pady=1)
+        # update the movement properties
+        self.update_movement_properties()
+        # toggle widgets
+        self.toggle_connection_widgets(True)
+        self.toggle_control_widgets(False)
 
     def connection_update_loop(self):
         if self.mc is None:
             # no motor connection, update the status
             self.set_connection_status('Disconnected')
-            # enable the widgets
-            self.toggle_control_widgets(True)
+            # toggle the widgets
+            self.toggle_connection_widgets(True)
+            self.toggle_control_widgets(False)
             # log
             self.log('Disconnected from motor')
             # stop looping
@@ -80,6 +159,8 @@ class DrillControlElement:
         if self.mc.is_valid():
             # set the status
             self.set_connection_status('Connected')
+            # toggle the widgets
+            self.toggle_control_widgets(True)
             # log
             self.log('Connected to motor on port ' + self.get_com_port())
             # stop looping
@@ -94,14 +175,34 @@ class DrillControlElement:
             self.set_connection_status('Disconnected')
             # reset the motor, no need to log as the motor controller will log
             self.mc = None
-            # enable the widgets
-            self.toggle_control_widgets(True)
+            # toggle the widgets
+            self.toggle_connection_widgets(True)
+            self.toggle_control_widgets(False)
             # stop looping,
             return
 
     def com_port_selected(self, event=None):
         # No operations needed
         pass
+
+    def move_type_selected(self, event=None):
+        # get the new index
+        new_index = self.cbx_move_type.current()
+        # if the index is the same, do nothing
+        if new_index == self.move_type_index:
+            return
+        # get current movement value
+        old_value = self.get_movement_value()
+        if new_index == 0:
+            # convert from steps to mm
+            new_value = (old_value*self.lead)/self.steps_for_rev
+        else:
+            # convert from mm to steps
+            new_value = int((old_value*self.steps_for_rev)/self.lead)
+        # update the move type index
+        self.move_type_index = new_index
+        # set the new value
+        self.move_value.set(str(new_value))
 
     def connect_button_pressed(self):
         # get target port
@@ -137,15 +238,31 @@ class DrillControlElement:
         # set the command flag
         self.command_flag = True
         # disable the control widgets
-        self.toggle_control_widgets(False)
+        self.toggle_connection_widgets(False)
         # Launch event loop
         self.parent.after(1, self.connection_update_loop)
 
     def zero_button_pressed(self):
-        # reset the position to zero
+        # reset the positions to zero
         self.position = 0.000
+        self.step_position = 0
         # update the position field
-        self.update_position_field()
+        self.update_position_fields()
+
+    def move_relative(self):
+        pass    # TODO
+
+    def move_absolute(self):
+        pass    # TODO
+
+    def step_relative(self):
+        pass    # TODO
+
+    def step_absolute(self):
+        pass    # TODO
+
+    def stop(self):
+        pass    # TODO
 
     def get_com_port(self):
         if len(self.port_names) <= 0:
@@ -174,7 +291,22 @@ class DrillControlElement:
         # disable the text box again
         self.txt_status.configure(state="disabled")
 
-    def update_position_field(self):
+    def get_movement_value(self):
+        string_val = self.move_value.get()
+        if string_val is None or string_val == '' or len(string_val) == 0:
+            return 0
+        if self.move_type_index == 0:
+            return float(string_val)
+        else:
+            return int(string_val)
+
+    def on_motor_connected(self):
+        self.toggle_control_widgets(True)
+
+    def on_motor_disconnected(self):
+        self.toggle_control_widgets(False)
+
+    def update_position_fields(self):
         # determine current depth as string
         new_pos = ('%.3f' % self.position) + ' mm'
         # get the current depth
@@ -190,8 +322,37 @@ class DrillControlElement:
         self.txt_position.insert(Tk.END, new_pos)
         # disable the text box again
         self.txt_position.configure(state="disabled")
+        # determine current step position as string
+        new_pos = ('%.0f' % self.step_position)
+        if new_pos == 1:
+            new_pos = new_pos + ' step'
+        else:
+            new_pos = new_pos + ' steps'
+        # get the current step position
+        current = self.txt_step_pos.get("1.0", "end-1c")
+        # if the current and new position are the same, no update needed
+        if current == new_pos:
+            return
+        # enable the text box
+        self.txt_step_pos.configure(state="normal")
+        # delete the previous value
+        self.txt_step_pos.delete("1.0", "end-1c")
+        # set the new value
+        self.txt_step_pos.insert(Tk.END, new_pos)
+        # disable the text box again
+        self.txt_step_pos.configure(state="disabled")
 
-    def toggle_control_widgets(self, status):
+    def update_movement_properties(self, *args):
+        # lead
+        lead_string = self.lead_value.get()
+        if len(lead_string) > 0:
+            self.lead = float(lead_string)
+        # steps per revolution
+        rev_string = self.drive_value.get()
+        if len(rev_string) > 0:
+            self.steps_for_rev = int(rev_string)
+
+    def toggle_connection_widgets(self, status):
         if status:
             state = "normal"
         else:
@@ -199,6 +360,26 @@ class DrillControlElement:
         self.cbx_com_ports.configure(state=state)
         self.btn_connect.configure(state=state)
         self.cbx_com_ports.configure(state=state)
+
+    def toggle_control_widgets(self, status):
+        if status:
+            state = "normal"
+        else:
+            state = "disabled"
+        self.ety_drive.configure(state=state)
+        self.ety_lead.configure(state=state)
+        self.btn_zero_pos.configure(state=state)
+        self.ety_move.configure(state=state)
+        self.cbx_move_type.configure(state=state)
+        self.btn_move_rel.configure(state=state)
+        self.btn_move_abs.configure(state=state)
+        self.btn_move_stop.configure(state=state)
+
+    def validate_movement_input(self, val):
+        if self.move_type_index == 0:
+            return input_validation.validate_float(val)
+        else:
+            return input_validation.validate_int(val)
 
     def log(self, line):
         self.logger("Motor Control: " + line)
