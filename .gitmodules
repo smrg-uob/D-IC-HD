@@ -1,0 +1,3 @@
+[submodule "src/xvh/d_ic_hd/stepper_control"]
+	path = src/xvh/d_ic_hd/stepper_control
+	url = https://github.com/smrg-uob/Stepper-Control.git
