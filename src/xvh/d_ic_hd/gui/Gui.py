@@ -1,5 +1,5 @@
 from CameraElement import CameraElement
-from ControlElement import ControlElement
+from controls.ControlElement import ControlElement
 from datetime import date, datetime
 from xvh.d_ic_hd.cameras.CameraList import CameraList
 import Tkinter as tk
