@@ -1,3 +1,5 @@
+# coding=utf-8
+
 from xvh.d_ic_hd.util import input_validation
 
 
@@ -9,8 +11,10 @@ class OpticsControlElement:
         self.cameras = cameras
         # set the logging method
         self.logger = logger
+        # title
         self.lbl_optics = tk.Label(self.parent, text='Optics', font=(title_font_type, title_font_size))
         self.lbl_optics.grid(row=0, column=0, sticky="w", pady=2)
+        # initialize widgets
         self.lbl_magnification = tk.Label(self.parent, text="Magnification")
         magnification_validation = (parent.register(input_validation.validate_float_positive), '%P')
         self.magnification_value = tk.StringVar()
