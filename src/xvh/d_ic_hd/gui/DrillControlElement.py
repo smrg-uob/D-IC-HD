@@ -264,40 +264,51 @@ class DrillControlElement:
         self.move_value.set(str(new_value))
 
     def connect_button_pressed(self):
+        # check if there is currently a connection
+        if self.mc is not None:
+            # disconnect
+            self.disconnect()
+        else:
+            # connect
+            self.connect()
+
+    def connect(self):
         # get target port
         target_port = self.get_com_port()
         if target_port is None:
             # log error and return
             self.log('Can not connect to a motor as there are no available ports.')
             return
-        # check if there is currently a connection
-        if self.mc is not None:
-            # get the port
-            motor_port = self.mc.get_port()
-            if motor_port == target_port:
-                # same port
-                if self.mc.is_valid_or_validating():
-                    # already connected, do nothing
-                    return
-                else:
-                    # try connecting again
-                    self.mc.start_connection()
-            # disconnect from the previous motor
-            self.mc.stop_connection()
-            self.set_connection_status('Disconnected')
-            self.mc = None
         # Create new motor controller
         self.mc = sc.create_motor_controller(target_port, 5, self.log)
         # Log
         self.log('Attempting connection with motor on port ' + target_port)
         # Try connecting to it
-        self.mc.start_connection()
-        # Update the status
-        self.set_connection_status('Connecting')
-        # disable the control widgets
-        self.toggle_connection_widgets(False)
-        # Launch event loop
-        self.parent.after(1, self.connection_update_loop)
+        if self.mc.start_connection():
+            # Update the status
+            self.set_connection_status('Connecting')
+            # disable the control widgets
+            self.toggle_connection_widgets(False)
+            # Launch event loop
+            self.parent.after(1, self.connection_update_loop)
+        else:
+            # reset the motor controller
+            self.mc = None
+            # log a message
+            self.log('Could not connect to port ' + target_port)
+
+    def disconnect(self):
+        # if the motor is stepping, stop it
+        if self.mc.is_stepping():
+            self.mc.stop_stepping()
+        # now stop the connection
+        self.mc.stop_connection()
+        self.set_connection_status('Disconnected')
+        self.mc = None
+        self.toggle_control_widgets(False)
+        self.toggle_connection_widgets(True)
+        # log
+        self.log('Disconnected from motor')
 
     def zero_button_pressed(self):
         # reset the positions to zero
@@ -505,10 +516,11 @@ class DrillControlElement:
     def toggle_connection_widgets(self, status):
         if status:
             state = "normal"
+            self.connect_value.set('Connect')
         else:
             state = "disabled"
+            self.connect_value.set('Disconnect')
         self.cbx_com_ports.configure(state=state)
-        self.btn_connect.configure(state=state)
         self.cbx_com_ports.configure(state=state)
 
     def toggle_control_widgets(self, status):
