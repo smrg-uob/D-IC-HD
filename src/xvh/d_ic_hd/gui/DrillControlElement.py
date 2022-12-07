@@ -22,6 +22,10 @@ class DrillControlElement:
         self.steps_for_inc = 0
         self.move_type_index = 0
         self.forwards = True
+        # step delay
+        self.step_delay = 5
+        self.min_step_delay = 2
+        self.max_step_delay = 100
         # position trackers
         self.step_position = 0
         self.position = 0.000
@@ -52,7 +56,6 @@ class DrillControlElement:
         title_font.configure(underline=True)
         # add status field
         self.lbl_status = tk.Label(master=self.frm_controls, text="Status", font=title_font)
-
         self.txt_status = tk.Text(master=self.frm_controls, width=8, height=1)
         self.set_connection_status('Disconnected')
         self.lbl_status.grid(row=row, column=col_1, columnspan=span_full, sticky=tk.W, padx=3, pady=1)
@@ -132,14 +135,26 @@ class DrillControlElement:
         self.btn_move_rel = tk.Button(master=self.frm_controls, textvariable=self.rel_value, width=10, command=self.move_relative)
         self.btn_move_abs = tk.Button(master=self.frm_controls, textvariable=self.abs_value, width=10, command=self.move_absolute)
         self.btn_move_stop = tk.Button(master=self.frm_controls, textvariable=self.stop_value, width=10, command=self.stop)
+        self.lbl_step_delay = tk.Label(master=self.frm_controls, text='Step Delay')
+        self.scroll_step_delay = tk.Scrollbar(master=self.frm_controls, orient=tk.HORIZONTAL, command=self.step_delay_scroll)
+        step_delay_validation = (self.frm_controls.register(input_validation.validate_int_positive), '%P')
+        self.step_delay_value = tk.StringVar()
+        self.step_delay_value.set(str(self.step_delay))
+        self.step_delay_value.trace_variable("w", self.step_delay_write)
+        self.ety_step_delay = tk.Entry(master=self.frm_controls, width=9, textvariable=self.step_delay_value, validate='key', validatecommand=step_delay_validation)
         self.lbl_move.grid(row=row, column=col_1, columnspan=span_1, sticky=tk.W, padx=3, pady=1)
         self.ety_move.grid(row=row + 1, column=col_1, columnspan=span_1 + span_2 + span_3 + 4, sticky=(tk.W, tk.E), padx=3, pady=1)
         self.cbx_move_type.grid(row=row + 1, column=col_4 + 4, columnspan=span_4 + span_5, sticky=(tk.W, tk.E), padx=3, pady=1)
         self.btn_move_rel.grid(row=row + 2, column=0, columnspan=9, sticky=(tk.W, tk.E), padx=1, pady=1)
         self.btn_move_abs.grid(row=row + 2, column=10, columnspan=9, sticky=(tk.W, tk.E), padx=1, pady=1)
         self.btn_move_stop.grid(row=row + 2, column=20, columnspan=9, sticky=(tk.W, tk.E), padx=1, pady=1)
+        self.lbl_step_delay.grid(row=row + 3, column=col_1, columnspan=span_1, sticky=tk.W, padx=3, pady=1)
+        self.scroll_step_delay.grid(row=row + 3, column=col_2, columnspan=span_2 + span_3 + span_4, sticky=(tk.W, tk.E), padx=3, pady=1)
+        self.ety_step_delay.grid(row=row + 3, column=col_5, columnspan=span_5, sticky=None, padx=3, pady=1)
         # update the movement properties
         self.update_movement_properties()
+        # update step delay
+        self.update_step_delay_scroll()
         # toggle widgets
         self.toggle_connection_widgets(True)
         self.toggle_control_widgets(False)
@@ -163,6 +178,8 @@ class DrillControlElement:
             self.toggle_control_widgets(True)
             # log
             self.log('Connected to motor on port ' + self.get_com_port())
+            # set the motor step delay
+            self.mc.set_step_delay(self.step_delay)
             # stop looping
             return
         if self.mc.is_validating():
@@ -426,6 +443,66 @@ class DrillControlElement:
         if len(rev_string) > 0:
             self.steps_for_rev = int(rev_string)
 
+    def update_step_delay_scroll(self):
+        pos = (self.step_delay + 0.0)/(self.max_step_delay - self.min_step_delay)
+        self.scroll_step_delay.set(pos, pos)
+
+    def step_delay_scroll(self, type, value, unit=""):
+        # handle scrolling and moving
+        new_value = self.step_delay
+        if type == "scroll":
+            new_value = min(self.max_step_delay, max(self.min_step_delay, self.step_delay + int(value)))
+        if type == "moveto":
+            new_value = self.min_step_delay + int(float(value)*(self.max_step_delay - self.min_step_delay))
+        # ensure the step delay is within bounds
+        if self.max_step_delay < new_value:
+            new_value = self.max_step_delay
+        elif new_value < self.min_step_delay:
+            new_value = self.min_step_delay
+        # make sure a motor is connected and valid
+        if self.mc is None or not self.mc.is_valid():
+            return
+        # check if an update is required
+        if new_value != self.step_delay:
+            # update step delay
+            self.step_delay = new_value
+            # update scroll bar
+            self.update_step_delay_scroll()
+            # update text box
+            self.step_delay_value.set(str(self.step_delay))
+            # send the step delay to the motor
+            self.mc.set_step_delay(self.step_delay)
+
+    def step_delay_write(self, *args):
+        # get the step delay string
+        step_delay_string = self.step_delay_value.get()
+        # if its length is 0, return
+        if len(step_delay_string) <= 0:
+            return
+        # get the new value and
+        new_value = int(step_delay_string)
+        # ensure the step delay is within bounds
+        if self.max_step_delay < new_value:
+            new_value = self.max_step_delay
+        elif new_value < self.min_step_delay:
+            new_value = self.min_step_delay
+        # if the new value is the same as the old one, return
+        if new_value == self.step_delay:
+            return
+        # check if the motor is valid and connected
+        if self.mc is None or not self.mc.is_valid():
+            # log a message
+            self.log('Not properly connected to a motor, can not update step delay')
+            # reset the step delay
+            self.step_delay_value.set(str(self.step_delay))
+            # return
+            return
+        # update the step delay
+        self.step_delay = new_value
+        self.step_delay_value.set(str(self.step_delay))
+        self.update_step_delay_scroll()
+        self.mc.set_step_delay(self.step_delay)
+
     def toggle_connection_widgets(self, status):
         if status:
             state = "normal"
@@ -447,6 +524,7 @@ class DrillControlElement:
         self.cbx_move_type.configure(state=state)
         self.btn_move_rel.configure(state=state)
         self.btn_move_abs.configure(state=state)
+        self.ety_step_delay.configure(state=state)
 
     def validate_movement_input(self, val):
         if self.move_type_index == 0:
