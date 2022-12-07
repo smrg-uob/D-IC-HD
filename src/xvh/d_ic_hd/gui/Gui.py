@@ -1,3 +1,5 @@
+# coding=utf-8
+
 from CameraElement import CameraElement
 from controls.ControlElement import ControlElement
 from datetime import date, datetime
