@@ -83,7 +83,6 @@ class DrillControlElement:
         self.lbl_steps_per_rev = tk.Label(master=self.frm_controls, text='Steps/Revolution')
         self.lbl_mm_per_rev = tk.Label(master=self.frm_controls, text='mm/Revolution')
         self.lbl_configuration.grid(row=row, column=col_1, columnspan=span_full, sticky=tk.W, padx=3, pady=1)
-
         int_validation = (self.frm_controls.register(input_validation.validate_int_positive), '%P')
         float_validation = (self.frm_controls.register(input_validation.validate_float_positive), '%P')
         self.drive_value = tk.StringVar()
@@ -100,19 +99,6 @@ class DrillControlElement:
         self.ety_lead.grid(row=row + 2, column=col_2 - 3, columnspan=span_2 + span_3, sticky=(tk.W, tk.E), padx=1, pady=1)
         self.lbl_steps_per_rev.grid(row=row + 1, column=col_4, columnspan=span_4, sticky=tk.W, padx=1, pady=1)
         self.lbl_mm_per_rev.grid(row=row + 2, column=col_4, columnspan=span_4, sticky=tk.W, padx=1, pady=1)
-        row = row + 3
-        # Add depth indicator and zero button
-        self.lbl_position = tk.Label(master=self.frm_controls, text='Position', font=title_font)
-        self.txt_position = tk.Text(master=self.frm_controls, width=8, height=1)
-        self.txt_step_pos = tk.Text(master=self.frm_controls, width=8, height=1)
-        self.update_position_fields()
-        self.zero_pos_value = tk.StringVar()
-        self.zero_pos_value.set("Zero")
-        self.btn_zero_pos = tk.Button(master=self.frm_controls, textvariable=self.zero_pos_value, command=self.zero_button_pressed)
-        self.lbl_position.grid(row=row, column=col_1, columnspan=span_1, sticky=tk.W, padx=3, pady=1)
-        self.txt_position.grid(row=row + 1, column=col_1, columnspan=span_1 + span_2 + span_3 + span_4, sticky=(tk.W, tk.E), padx=3, pady=1)
-        self.txt_step_pos.grid(row=row + 2, column=col_1, columnspan=span_1 + span_2 + span_3 + span_4, sticky=(tk.W, tk.E), padx=3, pady=1)
-        self.btn_zero_pos.grid(row=row + 1, column=col_5, rowspan=2, columnspan=span_5, sticky=(tk.N, tk.S, tk.W, tk.E), padx=3, pady=1)
         row = row + 3
         # Add movement controls
         self.lbl_move = tk.Label(master=self.frm_controls, text="Movement", font=title_font)
@@ -151,6 +137,19 @@ class DrillControlElement:
         self.lbl_step_delay.grid(row=row + 3, column=col_1, columnspan=span_1, sticky=tk.W, padx=3, pady=1)
         self.scroll_step_delay.grid(row=row + 3, column=col_2, columnspan=span_2 + span_3 + span_4, sticky=(tk.W, tk.E), padx=3, pady=1)
         self.ety_step_delay.grid(row=row + 3, column=col_5, columnspan=span_5, sticky=None, padx=3, pady=1)
+        row = row + 4
+        # Add position indicators and zero button
+        self.lbl_position = tk.Label(master=self.frm_controls, text='Position', font=title_font)
+        self.txt_position = tk.Text(master=self.frm_controls, width=8, height=1)
+        self.txt_step_pos = tk.Text(master=self.frm_controls, width=8, height=1)
+        self.update_position_fields()
+        self.zero_pos_value = tk.StringVar()
+        self.zero_pos_value.set("Zero")
+        self.btn_zero_pos = tk.Button(master=self.frm_controls, textvariable=self.zero_pos_value, command=self.zero_button_pressed)
+        self.lbl_position.grid(row=row, column=col_1, columnspan=span_1, sticky=tk.W, padx=3, pady=1)
+        self.txt_position.grid(row=row + 1, column=col_1, columnspan=span_1 + span_2 + span_3 + span_4, sticky=(tk.W, tk.E), padx=3, pady=1)
+        self.txt_step_pos.grid(row=row + 2, column=col_1, columnspan=span_1 + span_2 + span_3 + span_4, sticky=(tk.W, tk.E), padx=3, pady=1)
+        self.btn_zero_pos.grid(row=row + 1, column=col_5, rowspan=2, columnspan=span_5, sticky=(tk.N, tk.S, tk.W, tk.E), padx=3, pady=1)
         # update the movement properties
         self.update_movement_properties()
         # update step delay
