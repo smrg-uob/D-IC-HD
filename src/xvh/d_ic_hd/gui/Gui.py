@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from CameraElement import CameraElement
+from camera.CameraElement import CameraElement
 from controls.ControlElement import ControlElement
 from datetime import date, datetime
 from xvh.d_ic_hd.cameras.CameraList import CameraList
