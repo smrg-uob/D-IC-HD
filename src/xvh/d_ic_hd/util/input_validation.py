@@ -32,7 +32,7 @@ def validate_int(val):
 
 
 def validate_int_positive(val):
-    if len(val) == 0 or val == '-':
+    if len(val) == 0:
         return True
     try:
         nr = int(val)
