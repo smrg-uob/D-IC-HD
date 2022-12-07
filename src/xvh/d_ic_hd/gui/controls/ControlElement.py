@@ -44,6 +44,9 @@ class ControlElement:
     def get_projection(self):
         return self.optics_control.get_projection()
 
+    def get_calibration(self):
+        return self.ichd_calibration.get_calibration()
+
     def log(self, line):
         self.logger(line)
 

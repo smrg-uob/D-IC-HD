@@ -63,6 +63,10 @@ class CalibrationElementICHD:
         # update widget states
         self.update_widget_states()
 
+    # getter for the calibration
+    def get_calibration(self):
+        return self.calibration
+
     # calibration progress loop
     def calibration_progress_loop(self):
         if self.calibrator is None:
