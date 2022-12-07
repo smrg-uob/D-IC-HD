@@ -298,9 +298,13 @@ class DrillControlElement:
             self.log('Could not connect to port ' + target_port)
 
     def disconnect(self):
+        # log flag (no need to log if the motor is still validating, as the connection loop will log it)
+        log = self.mc.is_valid()
         # if the motor is stepping, stop it
         if self.mc.is_stepping():
             self.mc.stop_stepping()
+            # no need to log, the step loop will log
+            log = False
         # now stop the connection
         self.mc.stop_connection()
         self.set_connection_status('Disconnected')
@@ -308,7 +312,8 @@ class DrillControlElement:
         self.toggle_control_widgets(False)
         self.toggle_connection_widgets(True)
         # log
-        self.log('Disconnected from motor')
+        if log:
+            self.log('Disconnected from motor')
 
     def zero_button_pressed(self):
         # reset the positions to zero
