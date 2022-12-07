@@ -179,6 +179,8 @@ class DrillControlElement:
             self.log('Connected to motor on port ' + self.get_com_port())
             # set the motor step delay
             self.mc.set_step_delay(self.step_delay)
+            # start watchdog loop
+            self.parent.after(1, self.watch_dog_loop)
             # stop looping
             return
         if self.mc.is_validating():
@@ -196,6 +198,17 @@ class DrillControlElement:
             self.toggle_control_widgets(False)
             # stop looping,
             return
+
+    def watch_dog_loop(self):
+        if self.mc is None or not self.mc.is_valid():
+            # reset the connection
+            self.mc = None
+            self.set_connection_status('Disconnected')
+            self.toggle_connection_widgets(True)
+            self.toggle_control_widgets(False)
+        else:
+            # loop
+            self.parent.after(1, self.watch_dog_loop)
 
     def motor_step_loop(self):
         if self.mc is None:
@@ -289,7 +302,7 @@ class DrillControlElement:
             self.set_connection_status('Connecting')
             # disable the control widgets
             self.toggle_connection_widgets(False)
-            # Launch event loop
+            # Launch event loops
             self.parent.after(1, self.connection_update_loop)
         else:
             # reset the motor controller
