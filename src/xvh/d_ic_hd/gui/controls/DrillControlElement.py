@@ -26,8 +26,12 @@ class DrillControlElement:
         self.step_delay = 5
         self.min_step_delay = 2
         self.max_step_delay = 100
+        # step polling values
+        self.do_poll = False
+        self.poll_result = 0
         # position trackers
         self.step_position = 0
+        self.prev_step_position = 0
         self.position = 0.000
         # Title
         self.lbl_position_control = tk.Label(master=self.parent, text='Drill Position Control',
@@ -231,9 +235,9 @@ class DrillControlElement:
                 steps = self.mc.get_last_step_count()
                 self.log('Finished stepping ' + str(steps) + ' steps')
                 if self.forwards:
-                    self.step_position = self.step_position + steps
+                    self.step_position = self.prev_step_position + steps
                 else:
-                    self.step_position = self.step_position - steps
+                    self.step_position = self.prev_step_position - steps
                 self.position = (self.step_position*self.lead)/self.steps_for_rev
                 self.update_position_fields()
                 # toggle the widgets
@@ -252,6 +256,32 @@ class DrillControlElement:
             self.log('Motor timed out, cancelling steps')
             # stop looping,
             return
+
+    def motor_step_poll_loop(self):
+        # check if the motor is still stepping
+        if self.mc is not None and self.mc.is_stepping():
+            # submit the poll
+            if self.do_poll:
+                self.mc.poll_step_count(self.step_poll_reply)
+                # toggle the poll flag
+                self.do_poll = False
+            # update the step position values
+            if self.forwards:
+                self.step_position = self.prev_step_position + self.poll_result
+            else:
+                self.step_position = self.prev_step_position - self.poll_result
+            self.position = (self.step_position*self.lead)/self.steps_for_rev
+            self.update_position_fields()
+            # loop
+            self.parent.after(10, self.motor_step_poll_loop)
+
+    def step_poll_reply(self, steps):
+        # interacting with tkinter here will cause crashes as this function is called outside of the tkinter thread
+        if self.mc is not None and self.mc.is_stepping():
+            #  update the poll value
+            self.poll_result = steps
+            # also toggle the poll flag
+            self.do_poll = True
 
     def com_port_selected(self, event=None):
         # No operations needed
@@ -372,8 +402,14 @@ class DrillControlElement:
         self.mc.do_steps(steps)
         # disable the control widgets
         self.toggle_control_widgets(False)
-        # Launch event loop
+        # store the previous step count
+        self.prev_step_position = self.step_position
+        # Launch motor stepping loop
         self.parent.after(1, self.motor_step_loop)
+        # Launch motor step polling loop
+        self.do_poll = True
+        self.poll_result = 0
+        self.parent.after(10, self.motor_step_poll_loop)
 
     def step_absolute(self, steps):
         # calculate the relative movement and forward
@@ -436,7 +472,7 @@ class DrillControlElement:
         # enable the text box
         self.txt_position.configure(state="normal")
         # delete the previous value
-        self.txt_position.delete("1.0", "end-1c")
+        self.txt_position.delete("1.0", "end")
         # set the new value
         self.txt_position.insert(Tk.END, new_pos)
         # disable the text box again
@@ -455,7 +491,7 @@ class DrillControlElement:
         # enable the text box
         self.txt_step_pos.configure(state="normal")
         # delete the previous value
-        self.txt_step_pos.delete("1.0", "end-1c")
+        self.txt_step_pos.delete("1.0", "end")
         # set the new value
         self.txt_step_pos.insert(Tk.END, new_pos)
         # disable the text box again
