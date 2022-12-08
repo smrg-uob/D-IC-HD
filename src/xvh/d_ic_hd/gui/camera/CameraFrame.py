@@ -1,3 +1,6 @@
+# coding=utf-8
+
+from CameraManager import CameraManager
 from Tkinter import Frame
 from Tkinter import SE
 from PIL import Image, ImageTk
@@ -22,6 +25,7 @@ class CameraFrame(Frame):
         self.name = name
         # set the camera
         self.camera = camera
+        self.camera_manager = CameraManager(self.camera)
         # set the logging method
         self.logger = logger
         # check if the camera is valid
@@ -74,6 +78,7 @@ class CameraFrame(Frame):
 
     def set_camera(self, camera):
         self.camera = camera
+        self.camera_manager = CameraManager(camera)
         self.refresh_image()
 
     def is_valid_camera(self):
@@ -83,12 +88,26 @@ class CameraFrame(Frame):
         return self.camera.get_name()
 
     def refresh_image(self):
-        # take a new picture
-        self.original = self.camera.grab_picture()
-        # update aspect ratio
-        self.ar_p = (0.0 + self.image_width())/(0.0 + self.image_height())
-        # reset the background
-        self.reset_background()
+        # tell the camera manager to grab a new picture
+        if self.camera_manager.capture_image():
+            # loop
+            self.master.after(1, self.refresh_image_loop)
+
+    def refresh_image_loop(self):
+        if self.camera_manager.is_capturing():
+            # if the camera is still capturing, loop
+            self.master.after(1, self.refresh_image_loop)
+        else:
+            if self.camera_manager.has_captured():
+                # update the image
+                self.original = self.camera_manager.grab_image()
+                # update aspect ratio
+                self.ar_p = (0.0 + self.image_width())/(0.0 + self.image_height())
+                # reset the background
+                self.reset_background()
+            else:
+                # the camera has finished capturing, but no image was captured
+                self.log('Failed to grab image, check the camera connection')
 
     def resize_image(self, event):
         # fetch new width and height
