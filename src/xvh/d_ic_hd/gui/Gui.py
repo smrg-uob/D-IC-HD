@@ -13,6 +13,9 @@ class Gui:
         self.gui = tk.Tk()
         self.gui.wm_title("ICHD-DIC")
 
+        # flag to check if the gui has been closed
+        self.closed = False
+
         # Set full screen
         self.gui.state('zoomed')
 
@@ -63,10 +66,14 @@ class Gui:
         self.gui.mainloop()
 
     def __on_close(self):
+        self.closed = True
         self.controls.on_close()
         self.gui.destroy()
 
     def log(self, line):
+        # if the program is closed, do not log anything
+        if self.closed:
+            return
         # enable the text box
         self.console.configure(state="normal")
         # add a new line if there is already text
