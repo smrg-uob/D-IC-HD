@@ -13,7 +13,7 @@ import io
 # Class to display an image on a frame
 class CameraFrame(Frame):
     # zoom constants
-    ZOOM_VALUES = (1.00, 1.05, 1.10, 1.20, 1.50, 2.00, 3.00, 4.00, 5.00, 10.00)
+    ZOOM_VALUES = (0.5, 0.8, 1.00, 1.05, 1.10, 1.20, 1.50, 2.00, 3.00, 4.00, 5.00, 10.00)
     MAX_ZOOM = max(ZOOM_VALUES)
     MIN_ZOOM = min(ZOOM_VALUES)
 
@@ -147,11 +147,35 @@ class CameraFrame(Frame):
             self.canvas.create_image(self.w, self.h, image=self.overlay, anchor=SE)
 
     def adjust_for_zoom_and_pan(self, array):
+        # fetch image widths
+        w_z = self.zoom_width()
+        h_z = self.zoom_height()
+        w_i = self.image_width()
+        h_i = self.image_height()
+        # define bound indices
         x1 = self.dx
-        x2 = x1 + int(self.zoom_width())
         y1 = self.dy
-        y2 = y1 + int(self.zoom_height())
+        x2 = x1 + int(w_z)
+        y2 = y1 + int(h_z)
+        # adjust bounds if the width exceeds the image width
+        if w_z > w_i:
+            x1 = 0
+            x2 = w_i
+        # adjust the bounds if the height exceeds the image height
+        if h_z > h_i:
+            y1 = 0
+            y2 = h_i
+        # create a copy from the original array
         copy = array[x1:x2, y1:y2]
+        # add black areas above and below if the width exceeds the image width
+        if w_z > w_i:
+            zeros = np.zeros([int((w_z - w_i) / 2), copy.shape[1]])
+            copy = np.concatenate((zeros, copy, zeros), axis=0)
+        # add black areas left and right if the height exceeds the image height
+        if h_z > h_i:
+            zeros = np.zeros([copy.shape[0], int((h_z - h_i) / 2)])
+            copy = np.concatenate((zeros, copy, zeros), axis=1)
+        # convert the array to an image
         return Image.fromarray(copy).resize((self.w, self.h))
 
     def get_zoom_index(self):
