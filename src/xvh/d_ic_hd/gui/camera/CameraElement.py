@@ -202,6 +202,8 @@ class CameraElement:
         self.disable_calibration_fields()
         # set widget states based on camera status
         self.update_widget_states()
+        # initialize zoom scroll bar position
+        self.initialize_zoom_position()
 
     # called when a camera is selected
     def camera_selected(self, event=None):
@@ -283,6 +285,12 @@ class CameraElement:
     def update_scroll_bars(self):
         self.scrolled_x("scroll", 0)
         self.scrolled_y("scroll", 0)
+
+    def initialize_zoom_position(self):
+        full_range = len(CameraFrame.ZOOM_VALUES)
+        scroll_range = 1.0
+        current = self.camera_frame.get_zoom_index()
+        self.scroll_zoom.set((current + 0.0)/full_range, (current + scroll_range)/full_range)
 
     # called when the image is zoomed
     def zoom(self, type, value, unit=""):

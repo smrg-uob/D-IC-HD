@@ -13,7 +13,7 @@ import io
 # Class to display an image on a frame
 class CameraFrame(Frame):
     # zoom constants
-    ZOOM_VALUES = (1.00, 1.05, 1.10, 1.20, 1.50, 2.00, 3.00, 4.00, 5.00, 10.00)
+    ZOOM_VALUES = (0.5, 0.8, 1.00, 1.05, 1.10, 1.20, 1.50, 2.00, 3.00, 4.00, 5.00, 10.00)
     MAX_ZOOM = max(ZOOM_VALUES)
     MIN_ZOOM = min(ZOOM_VALUES)
 
@@ -153,6 +153,12 @@ class CameraFrame(Frame):
         y2 = y1 + int(self.zoom_height())
         copy = array[x1:x2, y1:y2]
         return Image.fromarray(copy).resize((self.w, self.h))
+
+    def get_zoom_index(self):
+        for index, value in enumerate(CameraFrame.ZOOM_VALUES):
+            if self.scale <= value:
+                return index
+        return len(CameraFrame.ZOOM_VALUES) - 1
 
     def set_zoom_index(self, index):
         scale = CameraFrame.ZOOM_VALUES[max(0, min(len(CameraFrame.ZOOM_VALUES) - 1, int(index)))]
