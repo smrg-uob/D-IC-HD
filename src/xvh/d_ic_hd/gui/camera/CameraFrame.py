@@ -13,7 +13,7 @@ import io
 # Class to display an image on a frame
 class CameraFrame(Frame):
     # zoom constants
-    ZOOM_VALUES = (0.5, 0.8, 1.00, 1.05, 1.10, 1.20, 1.50, 2.00, 3.00, 4.00, 5.00, 10.00)
+    ZOOM_VALUES = (1.00, 1.05, 1.10, 1.20, 1.50, 2.00, 3.00, 4.00, 5.00, 10.00)
     MAX_ZOOM = max(ZOOM_VALUES)
     MIN_ZOOM = min(ZOOM_VALUES)
 
@@ -171,8 +171,8 @@ class CameraFrame(Frame):
             self.set_pan(self.dx, self.dy)
 
     def calculate_pan_bounds(self):
-        self.max_dx = self.image_width() - int(self.zoom_width())
-        self.max_dy = self.image_height() - int(self.zoom_height())
+        self.max_dx = max(0, self.image_width() - int(self.zoom_width()))
+        self.max_dy = max(0, self.image_height() - int(self.zoom_height()))
         self.element.update_scroll_bars()
 
     def set_pan_x(self, dx):
