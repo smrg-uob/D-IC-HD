@@ -171,17 +171,15 @@ class CameraFrame(Frame):
         if w_z > w_i:
             sz = list(copy.shape)
             sz[0] = int((w_z - w_i) / 2)
-            zeros = np.zeros(sz, dtype=np.uint8)
+            zeros = np.zeros(sz, dtype=copy.dtype)
             copy = np.concatenate((zeros, copy, zeros), axis=0)
         # add black areas left and right if the height exceeds the image height
         if h_z > h_i:
             sz = list(copy.shape)
             sz[1] = int((h_z - h_i) / 2)
-            zeros = np.zeros(sz, dtype=np.uint8)
+            zeros = np.zeros(sz, dtype=copy.dtype)
             copy = np.concatenate((zeros, copy, zeros), axis=1)
         # convert the array to an image
-        type_or = array.dtype
-        type_cp = copy.dtype
         return Image.fromarray(copy).resize((self.w, self.h))
 
     def get_zoom_index(self):
