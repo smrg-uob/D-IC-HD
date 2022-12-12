@@ -150,8 +150,8 @@ class CameraFrame(Frame):
         # fetch image widths
         w_z = self.zoom_width()
         h_z = self.zoom_height()
-        w_i = self.image_width()
-        h_i = self.image_height()
+        w_i = array.shape[0]
+        h_i = array.shape[1]
         # define bound indices
         x1 = self.dx
         y1 = self.dy
@@ -169,13 +169,19 @@ class CameraFrame(Frame):
         copy = array[x1:x2, y1:y2]
         # add black areas above and below if the width exceeds the image width
         if w_z > w_i:
-            zeros = np.zeros([int((w_z - w_i) / 2), copy.shape[1]])
+            sz = list(copy.shape)
+            sz[0] = int((w_z - w_i) / 2)
+            zeros = np.zeros(sz, dtype=np.uint8)
             copy = np.concatenate((zeros, copy, zeros), axis=0)
         # add black areas left and right if the height exceeds the image height
         if h_z > h_i:
-            zeros = np.zeros([copy.shape[0], int((h_z - h_i) / 2)])
+            sz = list(copy.shape)
+            sz[1] = int((h_z - h_i) / 2)
+            zeros = np.zeros(sz, dtype=np.uint8)
             copy = np.concatenate((zeros, copy, zeros), axis=1)
         # convert the array to an image
+        type_or = array.dtype
+        type_cp = copy.dtype
         return Image.fromarray(copy).resize((self.w, self.h))
 
     def get_zoom_index(self):
