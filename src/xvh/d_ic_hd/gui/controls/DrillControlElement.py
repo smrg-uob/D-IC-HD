@@ -276,6 +276,9 @@ class DrillControlElement:
             self.parent.after(10, self.motor_step_poll_loop)
 
     def step_poll_reply(self, steps):
+        # check if the received value is not None (None means connection timed out)
+        if steps is None:
+            return 
         # interacting with tkinter here will cause crashes as this function is called outside of the tkinter thread
         if self.mc is not None and self.mc.is_stepping():
             #  update the poll value
